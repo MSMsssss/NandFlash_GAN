@@ -10,5 +10,4 @@ class Config:
         self.condition_dim = 1  # 输入条件的维度
         self.betas = (0.9, 0.999)  # 用于计算梯度以及梯度平方的运行平均值的系数
         self.pe_set = [1] + list(range(100, 15100, 100))
-        self.save_model_epoch = 50  # 设置每隔多少轮保存一次模型
         self.model_saved_path = os.path.dirname(os.path.abspath(__file__)) + "/save_model/"

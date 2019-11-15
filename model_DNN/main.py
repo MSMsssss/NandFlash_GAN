@@ -19,14 +19,20 @@ config = Config()
 parser = argparse.ArgumentParser()
 parser.add_argument("--train", action="store_true", help="训练模型")
 parser.add_argument("--eval", action="store_true", help="运行模型")
-parser.add_argument("--g_load_model_path", default="", help="生成器模型参数保存路径，如./msm.pth")
-parser.add_argument("--d_load_model_path", default="", help="判别器模型参数保存路径，如./msm.pth")
+parser.add_argument("--g_load_model_path", default="",
+                    help="生成器模型参数保存文件名，必须放置在同目录的save_model文件夹下，如msm.pth")
+parser.add_argument("--d_load_model_path", default="",
+                    help="判别器模型参数保存文件名，必须放置在同目录的save_model文件夹下，如msm.pth")
 parser.add_argument("--cuda", action="store_true", help="使用GPU训练")
-parser.add_argument("--generator_data_num", type=int, default=1,
-                    help="测试条件为pe:[1, 20000, 100]，每个pe生成generator_data_num个数据")
 parser.add_argument("--lr", type=float, default=0.02, help="学习速率")
 parser.add_argument("--epochs", type=int, default=100, help="训练轮数")
 parser.add_argument("--batch_size", type=int, default=32, help="batch尺寸")
+parser.add_argument("--save_model_epoch", type=int, default=50, help="设置每隔多少轮保存一次模型")
+parser.add_argument("--gen_start_pe", type=int, default=0, help="生成假数据的开始pe")
+parser.add_argument("--gen_end_pe", type=int, default=15000, help="生成假数据的结束pe")
+parser.add_argument("--gen_interval_pe", type=int, default=1000, help="生成假数据的间隔pe")
+parser.add_argument("--generator_data_num", type=int, default=1,
+                    help="每个pe生成generator_data_num个数据")
 opt = parser.parse_args()
 
 
@@ -170,7 +176,7 @@ def train():
                 "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
                 % (epoch + 1, opt.epochs, i, len(real_data_loader), d_loss.item(), g_loss.item())
             )
-        if (epoch + 1) % config.save_model_epoch == 0:
+        if (epoch + 1) % opt.save_model_epoch == 0:
             torch.save(generator.state_dict(), "%s/generator_epoch_%s.pth" % (config.model_saved_path, epoch + 1))
             torch.save(discriminator.state_dict(), "%s/discriminator_epoch_%s.pth" %
                        (config.model_saved_path, epoch + 1))
@@ -179,7 +185,7 @@ def train():
 def model_eval():
     connect = Connect("NandFlash_GAN")
     generator.eval()
-    for pe in range(0, 16000, 1000):
+    for pe in range(opt.gen_start_pe, opt.gen_end_pe, opt.gen_interval_pe):
         for i in range(opt.generator_data_num):
             z = torch.randn((1, config.latent_dim), requires_grad=False).to(device)
 

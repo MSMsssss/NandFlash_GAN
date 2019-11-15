@@ -37,6 +37,7 @@ class Connect:
 
         self.sql_sum_block_err = """update blocks set total_err = 
         (select sum(err) from generator_data where block_id = %s)
+        where block_id = %s
         """
 
     def __del__(self):
@@ -91,5 +92,5 @@ class Connect:
             self.connection.commit()
 
         with self.connection.cursor() as cursor:
-            cursor.execute(self.sql_sum_block_err, (new_block_id, ))
+            cursor.execute(self.sql_sum_block_err, (new_block_id, new_block_id))
         self.connection.commit()
