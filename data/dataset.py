@@ -1,16 +1,26 @@
 import torch.utils.data
 from data.connect_database import Connect
 import numpy as np
+import torch
 
 
 class Config(object):
     def __init__(self):
-        self.testID = 4  # 测试编号
-        self.chip = list(range(16))  # 芯片编号
-        self.ce = list(range(4))  # ce编号
-        self.die = [0]  # die编号
-        self.block = [2, 3]  # 块编号
-        self.pe_set = [1] + list(range(100, 15100, 1000))
+        # 在拥有GPU的服务器上运行时读取较多的数据
+        if not torch.cuda.is_available():
+            self.testID = 4  # 测试编号
+            self.chip = list(range(1))  # 芯片编号
+            self.ce = list(range(1))  # ce编号
+            self.die = [0]  # die编号
+            self.block = [2, 3]  # 块编号
+            self.pe_set = [1] + list(range(13000, 15100, 1000))
+        else:
+            self.testID = 4  # 测试编号
+            self.chip = list(range(16))  # 芯片编号
+            self.ce = list(range(4))  # ce编号
+            self.die = [0]  # die编号
+            self.block = [2, 3]  # 块编号
+            self.pe_set = [1] + list(range(100, 15100, 1000))
 
 
 # 自定义数据集
