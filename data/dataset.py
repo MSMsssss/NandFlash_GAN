@@ -10,7 +10,7 @@ class Config(object):
         self.ce = list(range(4))  # ce编号
         self.die = [0]  # die编号
         self.block = [2, 3]  # 块编号
-        self.pe_set = [1] + list(range(100, 15100, 100))
+        self.pe_set = [1] + list(range(100, 15100, 1000))
 
 
 # 自定义数据集
