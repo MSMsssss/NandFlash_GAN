@@ -192,7 +192,7 @@ def run():
     elif opt.train:
         train()
     elif opt.eval:
-        load_model(config.model_saved_path + opt.g_load_model_path, config.save_model_epoch + opt.d_load_model_path)
+        load_model(config.model_saved_path + opt.g_load_model_path, config.model_saved_path + opt.d_load_model_path)
         print("模型加载完成")
         model_eval()
 
