@@ -1,1 +1,1 @@
---eval --g_load_model_path generator_epoch_100.pth --d_load_model_path discriminator_epoch_100.pth
+--eval --g_load_model_path generator_epoch_20.pth --d_load_model_path discriminator_epoch_20.pth

@@ -24,6 +24,9 @@ parser.add_argument("--d_load_model_path", default="", help="判别器模型参�
 parser.add_argument("--cuda", action="store_true", help="使用GPU训练")
 parser.add_argument("--generator_data_num", type=int, default=1,
                     help="测试条件为pe:[1, 20000, 100]，每个pe生成generator_data_num个数据")
+parser.add_argument("--lr", type=float, default=0.02, help="学习速率")
+parser.add_argument("--epochs", type=int, default=100, help="训练轮数")
+parser.add_argument("--batch_size", type=int, default=32, help="batch尺寸")
 opt = parser.parse_args()
 
 
@@ -85,8 +88,8 @@ generator = Generator().to(device)
 discriminator = Discriminator().to(device)
 
 # 初始化优化器
-optimizer_G = torch.optim.Adam(generator.parameters(), lr=config.lr, betas=config.betas)
-optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=config.lr, betas=config.betas)
+optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr, betas=config.betas)
+optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=opt.lr, betas=config.betas)
 
 # 初始化损失函数
 loss_function = nn.MSELoss().to(device)
@@ -102,13 +105,13 @@ def train():
     # 初始化数据集
     print("加载数据中...")
     real_data_set = Dataset()
-    real_data_loader = torch.utils.data.DataLoader(dataset=real_data_set, batch_size=config.batch_size, shuffle=True)
+    real_data_loader = torch.utils.data.DataLoader(dataset=real_data_set, batch_size=opt.batch_size, shuffle=True)
     print('数据加载完成')
 
     generator.train()
     discriminator.train()
 
-    for epoch in range(config.epochs):
+    for epoch in range(opt.epochs):
         for i, (err_data, condition) in enumerate(real_data_loader):
             batch_size = err_data.shape[0]
 
@@ -165,7 +168,7 @@ def train():
 
             print(
                 "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
-                % (epoch + 1, config.epochs, i, len(real_data_loader), d_loss.item(), g_loss.item())
+                % (epoch + 1, opt.epochs, i, len(real_data_loader), d_loss.item(), g_loss.item())
             )
         if (epoch + 1) % config.save_model_epoch == 0:
             torch.save(generator.state_dict(), "%s/generator_epoch_%s.pth" % (config.model_saved_path, epoch + 1))
