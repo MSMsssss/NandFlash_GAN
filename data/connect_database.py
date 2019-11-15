@@ -57,7 +57,7 @@ class Connect:
 
     # 向NandFlash_GAN数据库插入1个block的fake数据
     def insert_block_data(self, fake_data, pe):
-        fake_data = fake_data[0].type(torch.int32).apply_(lambda a: a if a > 0 else 0)
+        fake_data = fake_data[0].type(torch.int32).to("cpu").apply_(lambda a: a if a > 0 else 0)
         with self.connection.cursor() as cursor:
             cursor.execute("insert into blocks(pe, total_err, submit_date) values (%s, %s, now())", (pe, 0))
         self.connection.commit()
