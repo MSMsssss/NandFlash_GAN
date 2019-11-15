@@ -167,7 +167,7 @@ def train():
                 "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
                 % (epoch + 1, config.epochs, i, len(real_data_loader), d_loss.item(), g_loss.item())
             )
-        if (epoch + 1) % 10 == 0:
+        if (epoch + 1) % config.save_model_epoch == 0:
             torch.save(generator.state_dict(), "%s/generator_epoch_%s.pth" % (config.model_saved_path, epoch + 1))
             torch.save(discriminator.state_dict(), "%s/discriminator_epoch_%s.pth" %
                        (config.model_saved_path, epoch + 1))
@@ -176,12 +176,12 @@ def train():
 def model_eval():
     connect = Connect("NandFlash_GAN")
     generator.eval()
-    for pe in range(14000, 14200, 100):
+    for pe in range(0, 16000, 1000):
         for i in range(opt.generator_data_num):
             z = torch.randn((1, config.latent_dim), requires_grad=False).to(device)
 
             # 生成假数据
-            gen_err_data = generator(z, torch.tensor([[pe]], dtype=torch.float32).to(device)) * 100
+            gen_err_data = generator(z, torch.tensor([[pe]], dtype=torch.float32).to(device))
             connect.insert_block_data(gen_err_data, pe)
             print("(序号: %s, pe: %s) fake block已导入数据库" % (i, pe))
 
@@ -192,7 +192,7 @@ def run():
     elif opt.train:
         train()
     elif opt.eval:
-        load_model(opt.g_load_model_path, opt.d_load_model_path)
+        load_model(config.model_saved_path + opt.g_load_model_path, config.save_model_epoch + opt.d_load_model_path)
         print("模型加载完成")
         model_eval()
 

@@ -6,11 +6,11 @@ import numpy as np
 class Config(object):
     def __init__(self):
         self.testID = 4  # 测试编号
-        self.chip = list(range(1))  # 芯片编号
-        self.ce = list(range(1))  # ce编号
+        self.chip = list(range(16))  # 芯片编号
+        self.ce = list(range(4))  # ce编号
         self.die = [0]  # die编号
         self.block = [2, 3]  # 块编号
-        self.pe_set = list(range(14800, 15000, 100))
+        self.pe_set = [1] + list(range(100, 15100, 100))
 
 
 # 自定义数据集
