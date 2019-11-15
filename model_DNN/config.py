@@ -14,4 +14,4 @@ class Config:
         self.lr = 0.02  # 学习速率
         self.pe_set = [1] + list(range(100, 15100, 100))
         self.save_model_epoch = 50  # 设置每隔多少轮保存一次模型
-        self.model_saved_path = os.path.dirname(os.path.abspath(__file__)) + "/save_model"
+        self.model_saved_path = os.path.dirname(os.path.abspath(__file__)) + "/save_model/"
