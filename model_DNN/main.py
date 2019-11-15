@@ -1,8 +1,9 @@
 import os
 import sys
-sys.path.append("/home/nvm/NandFlash_GAN/model_DNN")
-sys.path.append("/home/nvm/NandFlash_GAN/data")
-sys.path.append("/home/nvm/NandFlash_GAN/")
+root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_path)
+sys.path.append(root_path + "/model_DNN")
+sys.path.append(root_path + "/data")
 
 import argparse
 import torch
