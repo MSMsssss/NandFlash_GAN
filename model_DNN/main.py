@@ -106,7 +106,7 @@ optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr, betas=config.b
 optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=opt.lr, betas=config.betas)
 
 # 初始化损失函数
-loss_function = nn.BCEWithLogitsLoss().to(device)
+loss_function = nn.MSELoss()
 
 
 def load_model(g_model_path, d_model_path):
