@@ -15,3 +15,5 @@ data_loader = torch.utils.data.DataLoader(data_set, batch_size=len(data_set), sh
 for data, condition in data_loader:
     np.save(root_path + "/data/download_data/data.npy", data.numpy())
     np.save(root_path + "/data/download_data/condition.npy", condition.numpy())
+
+print("下载完成")
