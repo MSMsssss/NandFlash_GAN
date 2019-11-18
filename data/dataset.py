@@ -35,7 +35,7 @@ class Dataset(torch.utils.data.Dataset):
         # 选择要读取的group范围
         self.range = (0, len(self.config))
         # 读取的pe集合
-        self.pe_set = [1] + list(range(1000, 17000, 100000))
+        self.pe_set = [1] + list(range(1000, 17000, 1000))
         # 数据集长度
         self.length = 0
 
