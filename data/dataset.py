@@ -38,7 +38,7 @@ class Dataset(torch.utils.data.Dataset):
             # self.range = (0, len(self.config))
             self.range = (0, 1)
             # 读取的pe集合
-            self.pe_set = [1] + list(range(1000, 17000, 1000))
+            self.pe_set = [1] + list(range(500, 17000, 500))
 
             print("全部数据集信息：")
             for x in self.config[self.range[0]:self.range[1]]:
@@ -53,7 +53,7 @@ class Dataset(torch.utils.data.Dataset):
                                     data = self.connect.get_block_data(item["testID"], pe, chip, ce, die, block)
                                     if data is not None:
                                         self.data_set.append((data, np.array([pe], dtype=np.float32)))
-                                        print("chip:", chip, "ce:", ce, "die", die, "block:", block, "pe:", pe, "加载完成")
+                                        # print("chip:", chip, "ce:", ce, "die", die, "block:", block, "pe:", pe, "加载完成")
 
                 print("数据集：", item, "加载完成")
         else:
