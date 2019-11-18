@@ -40,6 +40,8 @@ class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
 
+        self.condition_norm = nn.BatchNorm1d(config.condition_dim)
+
         def block(in_feat, out_feat, normalize=True):
             layers = [nn.Linear(in_feat, out_feat)]
             if normalize:
@@ -57,7 +59,7 @@ class Generator(nn.Module):
 
     def forward(self, noise, condition):
         # Concatenate label embedding and image to produce input
-        condition = nn.BatchNorm1d(condition)
+        condition = self.condition_norm(condition)
         gen_input = torch.cat((condition, noise), -1)
         err_data = self.model(gen_input)
         err_data = err_data.view(err_data.size(0), config.height, config.width)
@@ -67,6 +69,8 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
+
+        self.condition_norm = nn.BatchNorm1d(config.condition_dim)
 
         self.model = nn.Sequential(
             nn.Linear(config.condition_dim + config.width * config.height, 512),
@@ -82,7 +86,7 @@ class Discriminator(nn.Module):
 
     def forward(self, err_data, condition):
         # Concatenate label embedding and image to produce input
-        condition = nn.BatchNorm1d(condition)
+        condition = self.condition_norm(condition)
         d_in = torch.cat((err_data.view(err_data.size(0), -1), condition), -1)
         validity = self.model(d_in)
         return validity

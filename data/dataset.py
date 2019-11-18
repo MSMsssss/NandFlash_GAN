@@ -26,16 +26,24 @@ import torch
 # 自定义数据集
 class Dataset(torch.utils.data.Dataset):
     def __init__(self):
+        # 建立数据库连接
         self.connect = Connect(SqlConfig.train_set_database)
+        # 将从数据库读出的数据全部保存至data_set
         self.data_set = []
+        # 从nandflash.testgroup中得到的数据集配置信息
         self.config = self.connect.get_data_config()
-        self.pe_set = [1] + list(range(1000, 17000, 1000))
+        # 选择要读取的group范围
+        self.range = (0, len(self.config))
+        # 读取的pe集合
+        self.pe_set = [1] + list(range(1000, 17000, 100000))
+        # 数据集长度
+        self.length = 0
 
         print("全部数据集信息：")
-        for x in self.config:
+        for x in self.config[self.range[0]:self.range[1]]:
             print(x)
 
-        for item in self.config:
+        for item in self.config[self.range[0]:self.range[1]]:
             for chip in item["chip"]:
                 for ce in item["ce"]:
                     for die in item["die"]:
@@ -44,12 +52,13 @@ class Dataset(torch.utils.data.Dataset):
                                 data = self.connect.get_block_data(item["testID"], pe, chip, ce, die, block)
                                 if data is not None:
                                     self.data_set.append((data, np.array([pe], dtype=np.float32)))
+                                    # print("chip:", chip, "ce:", ce, "die", die, "block:", block, "pe:", pe, "加载完成")
+                                    self.length += 1
 
             print("数据集：", item, "加载完成")
 
     def __len__(self):
-        return len(self.config.chip) * len(self.config.ce) * \
-               len(self.config.die) * len(self.config.block) * len(self.config.pe_set)
+        return self.length
 
     def __getitem__(self, index):
         return self.data_set[index]
