@@ -57,6 +57,7 @@ class Generator(nn.Module):
 
     def forward(self, noise, condition):
         # Concatenate label embedding and image to produce input
+        condition = nn.BatchNorm1d(condition)
         gen_input = torch.cat((condition, noise), -1)
         err_data = self.model(gen_input)
         err_data = err_data.view(err_data.size(0), config.height, config.width)
@@ -81,6 +82,7 @@ class Discriminator(nn.Module):
 
     def forward(self, err_data, condition):
         # Concatenate label embedding and image to produce input
+        condition = nn.BatchNorm1d(condition)
         d_in = torch.cat((err_data.view(err_data.size(0), -1), condition), -1)
         validity = self.model(d_in)
         return validity
