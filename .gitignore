@@ -1,4 +1,4 @@
 *.pth
 *.pyc
 .idea
-nohup.out
+*.out
