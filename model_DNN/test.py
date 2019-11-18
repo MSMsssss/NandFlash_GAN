@@ -4,4 +4,4 @@ import numpy as np
 import os
 import sys
 
-print(__file__)
+print(np.array([1, 2, 3]).shape)

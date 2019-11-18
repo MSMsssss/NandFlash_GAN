@@ -25,37 +25,50 @@ import torch
 
 # 自定义数据集
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self):
-        # 建立数据库连接
-        self.connect = Connect(SqlConfig.train_set_database)
-        # 将从数据库读出的数据全部保存至data_set
-        self.data_set = []
-        # 从nandflash.testgroup中得到的数据集配置信息
-        self.config = self.connect.get_data_config()
-        # 选择要读取的group范围
-        self.range = (0, len(self.config))
-        # 读取的pe集合
-        self.pe_set = [1] + list(range(1000, 17000, 1000))
+    def __init__(self, err_data_path="", condition_data_path=""):
+        if err_data_path == "":
+            self.load_from_local = False
+            # 建立数据库连接
+            self.connect = Connect(SqlConfig.train_set_database)
+            # 将从数据库读出的数据全部保存至data_set
+            self.data_set = []
+            # 从nandflash.testgroup中得到的数据集配置信息
+            self.config = self.connect.get_data_config()
+            # 选择要读取的group:range[0]~range[1]范围
+            # self.range = (0, len(self.config))
+            self.range = (0, 1)
+            # 读取的pe集合
+            self.pe_set = [1] + list(range(1000, 17000, 1000))
 
-        print("全部数据集信息：")
-        for x in self.config[self.range[0]:self.range[1]]:
-            print(x)
+            print("全部数据集信息：")
+            for x in self.config[self.range[0]:self.range[1]]:
+                print(x)
 
-        for item in self.config[self.range[0]:self.range[1]]:
-            for chip in item["chip"]:
-                for ce in item["ce"]:
-                    for die in item["die"]:
-                        for block in item["block"]:
-                            for pe in self.pe_set:
-                                data = self.connect.get_block_data(item["testID"], pe, chip, ce, die, block)
-                                if data is not None:
-                                    self.data_set.append((data, np.array([pe], dtype=np.float32)))
-                                    # print("chip:", chip, "ce:", ce, "die", die, "block:", block, "pe:", pe, "加载完成")
+            for item in self.config[self.range[0]:self.range[1]]:
+                for chip in item["chip"]:
+                    for ce in item["ce"]:
+                        for die in item["die"]:
+                            for block in item["block"]:
+                                for pe in self.pe_set:
+                                    data = self.connect.get_block_data(item["testID"], pe, chip, ce, die, block)
+                                    if data is not None:
+                                        self.data_set.append((data, np.array([pe], dtype=np.float32)))
+                                        print("chip:", chip, "ce:", ce, "die", die, "block:", block, "pe:", pe, "加载完成")
 
-            print("数据集：", item, "加载完成")
+                print("数据集：", item, "加载完成")
+        else:
+            self.load_from_local = True
+            self.err_data = np.load(err_data_path)
+            self.condition_data = np.load(condition_data_path)
 
     def __len__(self):
-        return len(self.data_set)
+        if self.load_from_local:
+            return self.err_data.shape[0]
+        else:
+            return len(self.data_set)
 
     def __getitem__(self, index):
-        return self.data_set[index]
+        if self.load_from_local:
+            return self.err_data[index], self.condition_data[index]
+        else:
+            return self.data_set[index]

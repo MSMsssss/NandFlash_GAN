@@ -33,6 +33,8 @@ parser.add_argument("--gen_end_pe", type=int, default=15000, help="生成假数�
 parser.add_argument("--gen_interval_pe", type=int, default=1000, help="生成假数据的间隔pe")
 parser.add_argument("--generator_data_num", type=int, default=1,
                     help="每个pe生成generator_data_num个数据")
+parser.add_argument("--err_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
+parser.add_argument("--condition_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
 opt = parser.parse_args()
 print(opt)
 
@@ -52,10 +54,10 @@ class Generator(nn.Module):
 
         self.model = nn.Sequential(
             *block(config.latent_dim + config.condition_dim, 128, normalize=False),
-            *block(128, 256),
-            *block(256, 512),
+            *block(128, 512),
             *block(512, 1024),
-            nn.Linear(1024, config.width * config.height),
+            *block(1024, 4096),
+            nn.Linear(4096, config.width * config.height)
         )
 
     def forward(self, noise, condition):
@@ -82,6 +84,7 @@ class Discriminator(nn.Module):
             nn.Dropout(0.4),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(512, 1),
+            nn.Sigmoid()
         )
 
     def forward(self, err_data, condition):
@@ -103,7 +106,7 @@ optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr, betas=config.b
 optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=opt.lr, betas=config.betas)
 
 # 初始化损失函数
-loss_function = nn.MSELoss().to(device)
+loss_function = nn.BCELoss().to(device)
 
 
 def load_model(g_model_path, d_model_path):
@@ -115,7 +118,11 @@ def load_model(g_model_path, d_model_path):
 def train():
     # 初始化数据集
     print("加载数据中...")
-    real_data_set = Dataset()
+    if opt.err_data_name != "":
+        real_data_set = Dataset(err_data_path=root_path + "/data/download_data/" + opt.err_data_name,
+                                condition_data_path=root_path + "/data/download_data/" + opt.condition_data_name)
+    else:
+        real_data_set = Dataset()
     real_data_loader = torch.utils.data.DataLoader(dataset=real_data_set, batch_size=opt.batch_size, shuffle=True)
     print('数据加载完成，块数据:%s条' % len(real_data_set))
 
