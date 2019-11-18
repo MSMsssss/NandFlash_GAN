@@ -35,8 +35,8 @@ class Dataset(torch.utils.data.Dataset):
             # 从nandflash.testgroup中得到的数据集配置信息
             self.config = self.connect.get_data_config()
             # 选择要读取的group:range[0]~range[1]范围
-            # self.range = (0, len(self.config))
-            self.range = (0, 1)
+            self.range = (0, len(self.config))
+            # self.range = (0, 1)
             # 读取的pe集合
             self.pe_set = [1] + list(range(500, 17000, 500))
 
