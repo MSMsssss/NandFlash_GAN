@@ -34,6 +34,7 @@ parser.add_argument("--gen_interval_pe", type=int, default=1000, help="生成假
 parser.add_argument("--generator_data_num", type=int, default=1,
                     help="每个pe生成generator_data_num个数据")
 opt = parser.parse_args()
+print(opt)
 
 
 class Generator(nn.Module):
@@ -70,9 +71,8 @@ class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
 
-        self.condition_norm = nn.BatchNorm1d(config.condition_dim)
-
         self.model = nn.Sequential(
+            nn.BatchNorm1d(config.condition_dim + config.width * config.height),
             nn.Linear(config.condition_dim + config.width * config.height, 512),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(512, 512),
@@ -86,7 +86,6 @@ class Discriminator(nn.Module):
 
     def forward(self, err_data, condition):
         # Concatenate label embedding and image to produce input
-        condition = self.condition_norm(condition)
         d_in = torch.cat((err_data.view(err_data.size(0), -1), condition), -1)
         validity = self.model(d_in)
         return validity
@@ -118,8 +117,7 @@ def train():
     print("加载数据中...")
     real_data_set = Dataset()
     real_data_loader = torch.utils.data.DataLoader(dataset=real_data_set, batch_size=opt.batch_size, shuffle=True)
-    print('数据加载完成')
-    print("块数据共：%s条" % len(real_data_set))
+    print('数据加载完成，块数据:%s条' % len(real_data_set))
 
     generator.train()
     discriminator.train()
