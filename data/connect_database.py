@@ -4,6 +4,9 @@ import torch
 
 
 class SqlConfig(object):
+    train_set_database = "nandflash"
+    generator_database = "NandFlash_GAN"
+
     def __init__(self, database):
         self.host = '10.147.20.88'  # 主机地址
         self.user = 'root'  # 用户名
@@ -13,6 +16,14 @@ class SqlConfig(object):
         self.cursorclass = pymysql.cursors.DictCursor  # 游标类型
         self.page_num = 2304  # 每个块含有的page数目
         self.f_num = 16
+
+
+def string_handle(string):
+    if string.find("-") == -1:
+        return [int(s) for s in string.replace(" ", "").split(",")]
+    else:
+        index = [int(s) for s in string.replace(" ", "").split("-")]
+        return list(range(index[0], index[1] + 1))
 
 
 class Connect:
@@ -43,11 +54,37 @@ class Connect:
     def __del__(self):
         self.connection.close()
 
-    # 从nandflash数据库获得块错误信息
+    # 从nandflash.testgroup中获得训练数据的配置
+    def get_data_config(self):
+        # 执行此函数必须使用训练集数据库
+        if self.config.db != SqlConfig.train_set_database:
+            raise RuntimeError("used error database!")
+
+        with self.connection.cursor() as cursor:
+            cursor.execute("select * from testgroup")
+            group_info = cursor.fetchall()
+
+        config = []
+        for item in group_info:
+            info_dict = {"testID": item["testID"], "chip": string_handle(item["chip"]), "ce": string_handle(item["ce"]),
+                         "die": string_handle(item["die"]), "block": string_handle(item["block"])}
+
+            config.append(info_dict)
+
+        return config
+
+    # 从nandflash.tread数据库获得块错误信息
     def get_block_data(self, testID, pe, chip, ce, die, block):
+        # 执行此函数必须使用训练集数据库
+        if self.config.db != SqlConfig.train_set_database:
+            raise RuntimeError("used error database!")
+
         with self.connection.cursor() as cursor:
             cursor.execute(self.sql_get_block, (testID, pe, chip, ce, die, block))
             data = cursor.fetchall()
+            if len(data) != self.config.page_num:
+                return None
+
             result = np.zeros((self.config.page_num, self.config.f_num), dtype=np.float32)
 
             for page_index in range(self.config.page_num):
@@ -58,6 +95,10 @@ class Connect:
 
     # 向NandFlash_GAN数据库插入1个block的fake数据
     def insert_block_data(self, fake_data, pe):
+        # 执行此函数必须使用保存生成数据的数据库
+        if self.config.db != SqlConfig.generator_database:
+            raise RuntimeError("used error database!")
+
         fake_data = fake_data[0].type(torch.int32).to("cpu").apply_(lambda a: a if a > 0 else 0)
         with self.connection.cursor() as cursor:
             cursor.execute("insert into blocks(pe, total_err, submit_date) values (%s, %s, now())", (pe, 0))
@@ -94,3 +135,9 @@ class Connect:
         with self.connection.cursor() as cursor:
             cursor.execute(self.sql_sum_block_err, (new_block_id, new_block_id))
         self.connection.commit()
+
+
+if __name__ == "__main__":
+    connect = Connect(SqlConfig.train_set_database)
+    for x in connect.get_data_config():
+        print(x)

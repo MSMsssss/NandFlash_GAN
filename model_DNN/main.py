@@ -13,7 +13,7 @@ import numpy as np
 from model_DNN.config import Config
 import torch.utils.data
 from data.dataset import Dataset
-from data.connect_database import Connect
+from data.connect_database import Connect, SqlConfig
 
 config = Config()
 parser = argparse.ArgumentParser()
@@ -185,7 +185,7 @@ def train():
 
 
 def model_eval():
-    connect = Connect("NandFlash_GAN")
+    connect = Connect(SqlConfig.generator_database)
     generator.eval()
     for pe in range(opt.gen_start_pe, opt.gen_end_pe, opt.gen_interval_pe):
         for i in range(opt.generator_data_num):
