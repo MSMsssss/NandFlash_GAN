@@ -119,6 +119,7 @@ def train():
     real_data_set = Dataset()
     real_data_loader = torch.utils.data.DataLoader(dataset=real_data_set, batch_size=opt.batch_size, shuffle=True)
     print('数据加载完成')
+    print("块数据共：%s条" % len(real_data_set))
 
     generator.train()
     discriminator.train()
