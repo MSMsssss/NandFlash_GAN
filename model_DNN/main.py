@@ -1,5 +1,6 @@
 import os
 import sys
+
 root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_path)
 sys.path.append(root_path + "\\model_DNN")
@@ -91,7 +92,7 @@ class Discriminator(nn.Module):
         # Concatenate label embedding and image to produce input
         d_in = torch.cat((err_data.view(err_data.size(0), -1), condition), -1)
         validity = self.model(d_in)
-        return validity
+        return validity.squeeze(1)
 
 
 # 设备
@@ -106,7 +107,7 @@ optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr, betas=config.b
 optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=opt.lr, betas=config.betas)
 
 # 初始化损失函数
-loss_function = nn.MSELoss()
+loss_function = nn.BCELoss()
 
 
 def load_model(g_model_path, d_model_path):
@@ -129,40 +130,18 @@ def train():
     generator.train()
     discriminator.train()
 
+    real_label = 1
+    fake_label = 0
+
     for epoch in range(opt.epochs):
         for i, (err_data, condition) in enumerate(real_data_loader):
             batch_size = err_data.shape[0]
 
-            # 初始化标签
-            valid = torch.ones((batch_size, 1), dtype=torch.float32, requires_grad=False).to(device)
-            fake = torch.zeros((batch_size, 1), dtype=torch.float32, requires_grad=False).to(device)
-
             # 真实数据
             real_err_data = err_data.to(device)
-            real_err_data.requires_grad = False
+            real_err_data.requires_grad_(False)
             real_condition = condition.to(device)
-
-            # -----------------
-            #  训练生成器
-            # -----------------
-            optimizer_G.zero_grad()
-
-            # 噪声采样和假数据条件生成
-            z = torch.randn((batch_size, config.latent_dim), requires_grad=False).to(device=device, dtype=torch.float32)
-            gen_condition = torch.from_numpy(np.random.choice(
-                config.pe_set, (batch_size, config.condition_dim))).to(device=device, dtype=torch.float32)
-
-            gen_condition.requires_grad = False
-
-            # 生成假数据
-            gen_err_data = generator(z, gen_condition)
-
-            # 计算生成器损失
-            validity = discriminator(gen_err_data, gen_condition)
-            g_loss = loss_function(validity, valid)
-
-            g_loss.backward()
-            optimizer_G.step()
+            real_condition.requires_grad_(False)
 
             # ---------------------
             #  训练分类器
@@ -170,24 +149,56 @@ def train():
 
             optimizer_D.zero_grad()
 
-            # 计算分类器对真实数据的损失
-            validity_real = discriminator(real_err_data, real_condition)
-            d_real_loss = loss_function(validity_real, valid)
+            # 训练真实数据
+            label = torch.full((batch_size,), real_label, device=device)
+            output = discriminator(real_err_data, real_condition)
+            d_real = output.mean().item()
 
-            # 计算分类器对生成数据的损失
-            validity_fake = discriminator(gen_err_data.detach(), gen_condition)
-            d_fake_loss = loss_function(validity_fake, fake)
+            # 计算损失
+            lossD_real = loss_function(output, label)
+            lossD_real.backward()
 
-            # 计算总损失
-            d_loss = (d_real_loss + d_fake_loss) / 2
+            # 生成噪音和标签
+            # 噪声采样和假数据条件生成
+            z = torch.randn((batch_size, config.latent_dim), requires_grad=False).to(device=device, dtype=torch.float32)
+            gen_condition = torch.from_numpy(np.random.choice(
+                config.pe_set, (batch_size, config.condition_dim))).to(device=device, dtype=torch.float32)
+            gen_condition.requires_grad_(False)
 
-            d_loss.backward()
+            # 训练生成数据
+            label.fill_(fake_label)
+            fake_err_data = generator(z, gen_condition)
+            output = discriminator(fake_err_data.detach(), gen_condition)
+            d_fake1 = output.mean().item()
+
+            # 计算损失
+            lossD_fake = loss_function(output, label)
+            lossD_fake.backward()
+
+            # 总损失
+            d_loss = (lossD_fake + lossD_real) / 2
             optimizer_D.step()
 
+            # -----------------
+            #  训练生成器
+            # -----------------
+            optimizer_G.zero_grad()
+
+            # 计算生成器损失
+            label.fill_(real_label)
+            output = discriminator(fake_err_data, gen_condition)
+            d_fake2 = output.mean().item()
+            g_loss = loss_function(output, label)
+
+            g_loss.backward()
+            optimizer_G.step()
+
             print(
-                "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
-                % (epoch + 1, opt.epochs, i, len(real_data_loader), d_loss.item(), g_loss.item())
+                "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f] [D(x): %f] [D1(z): %f] [D2(z): %f]"
+                % (epoch + 1, opt.epochs, i, len(real_data_loader),
+                   d_loss.item(), g_loss.item(), d_real, d_fake1, d_fake2)
             )
+
         if (epoch + 1) % opt.save_model_epoch == 0:
             torch.save(generator.state_dict(), "%s/generator_epoch_%s.pth" % (config.model_saved_path, epoch + 1))
             torch.save(discriminator.state_dict(), "%s/discriminator_epoch_%s.pth" %

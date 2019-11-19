@@ -4,4 +4,4 @@ import numpy as np
 import os
 import sys
 
-print(np.array([1, 2, 3]).shape)
+print(torch.full((32,), 1))
