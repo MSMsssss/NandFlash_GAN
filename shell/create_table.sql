@@ -32,3 +32,11 @@ CREATE TABLE IF NOT EXISTS generator_data(
    PRIMARY KEY (block_id, page_id),
    FOREIGN KEY (block_id) REFERENCES blocks(block_id)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS real_blocks(
+   block_id INT UNSIGNED AUTO_INCREMENT, -- block编号
+   pe INT NOT NULL, -- 测试该块时的pe次数
+   total_err INT NOT NULL, -- 该块的总错误次数
+   submit_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 数据生成时间
+   PRIMARY KEY (block_id)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
