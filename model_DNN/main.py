@@ -25,7 +25,7 @@ parser.add_argument("--g_load_model_path", default="",
 parser.add_argument("--d_load_model_path", default="",
                     help="判别器模型参数保存文件名，必须放置在同目录的save_model文件夹下，如msm.pth")
 parser.add_argument("--cuda", action="store_true", help="使用GPU训练")
-parser.add_argument("--lr", type=float, default=0.02, help="学习速率")
+parser.add_argument("--lr", type=float, default=0.002, help="学习速率")
 parser.add_argument("--epochs", type=int, default=100, help="训练轮数")
 parser.add_argument("--batch_size", type=int, default=32, help="batch尺寸")
 parser.add_argument("--save_model_epoch", type=int, default=50, help="设置每隔多少轮保存一次模型")
@@ -139,9 +139,7 @@ def train():
 
             # 真实数据
             real_err_data = err_data.to(device)
-            real_err_data.requires_grad_(False)
             real_condition = condition.to(device)
-            real_condition.requires_grad_(False)
 
             # ---------------------
             #  训练分类器
@@ -151,7 +149,7 @@ def train():
 
             # 训练真实数据
             label = torch.full((batch_size,), real_label, device=device)
-            output = discriminator(real_err_data, real_condition)
+            output = discriminator(real_err_data.detach(), real_condition.detach())
             d_real = output.mean().item()
 
             # 计算损失
@@ -160,15 +158,14 @@ def train():
 
             # 生成噪音和标签
             # 噪声采样和假数据条件生成
-            z = torch.randn((batch_size, config.latent_dim), requires_grad=False).to(device=device, dtype=torch.float32)
+            z = torch.randn((batch_size, config.latent_dim)).to(device=device, dtype=torch.float32)
             gen_condition = torch.from_numpy(np.random.choice(
                 config.pe_set, (batch_size, config.condition_dim))).to(device=device, dtype=torch.float32)
-            gen_condition.requires_grad_(False)
 
             # 训练生成数据
             label.fill_(fake_label)
-            fake_err_data = generator(z, gen_condition)
-            output = discriminator(fake_err_data.detach(), gen_condition)
+            fake_err_data = generator(z.detach(), gen_condition.detach())
+            output = discriminator(fake_err_data.detach(), gen_condition.detach())
             d_fake1 = output.mean().item()
 
             # 计算损失
