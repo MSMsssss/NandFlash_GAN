@@ -36,18 +36,22 @@ def count_frequency():
 def count_total_err_num():
     pe_set = set(list(pe_data.astype(np.int)))
     err_num_dict = {}
+    count_dict = {}
 
     for pe in pe_set:
-        err_num_dict[int(pe)] = []
+        err_num_dict[int(pe)] = 0
+        count_dict[int(pe)] = 0
 
     for i in range(err_data.shape[0]):
-        err_num_dict[int(pe_data[i])].append(int(err_data[i].sum()))
+        err_num_dict[int(pe_data[i])] += err_data[i].sum()
+        count_dict[int(pe_data[i])] += 1
 
     pe_set = list(pe_set)
     pe_set.sort()
     res_set = []
+
     for pe in pe_set:
-        res_set.append(int(sum(err_num_dict[pe]) / len(err_num_dict)))
+        res_set.append(err_num_dict[pe] / count_dict[pe])
 
     plt.plot(pe_set, res_set)
     plt.show()
@@ -55,3 +59,4 @@ def count_total_err_num():
 
 if __name__ == "__main__":
     count_total_err_num()
+
