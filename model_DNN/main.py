@@ -13,7 +13,7 @@ import torch.functional as F
 import numpy as np
 from model_DNN.config import Config
 import torch.utils.data
-from data.dataset import Dataset
+from data.dataset import Dataset, TestDataset
 from data.connect_database import Connect, SqlConfig
 
 config = Config()
@@ -36,6 +36,7 @@ parser.add_argument("--generator_data_num", type=int, default=1,
                     help="每个pe生成generator_data_num个数据")
 parser.add_argument("--err_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
 parser.add_argument("--condition_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
+parser.add_argument("--test", action="store_true", help="测试模式")
 opt = parser.parse_args()
 print(opt)
 
@@ -119,11 +120,14 @@ def load_model(g_model_path, d_model_path):
 def train():
     # 初始化数据集
     print("加载数据中...")
-    if opt.err_data_name != "":
-        real_data_set = Dataset(err_data_path=root_path + "/data/download_data/" + opt.err_data_name,
-                                condition_data_path=root_path + "/data/download_data/" + opt.condition_data_name)
+    if opt.test:
+        real_data_set = TestDataset()
     else:
-        real_data_set = Dataset()
+        if opt.err_data_name != "":
+            real_data_set = Dataset(err_data_path=root_path + "/data/download_data/" + opt.err_data_name,
+                                    condition_data_path=root_path + "/data/download_data/" + opt.condition_data_name)
+        else:
+            real_data_set = Dataset()
     real_data_loader = torch.utils.data.DataLoader(dataset=real_data_set, batch_size=opt.batch_size, shuffle=True)
     print('数据加载完成，块数据:%s条' % len(real_data_set))
 
@@ -149,7 +153,7 @@ def train():
 
             # 训练真实数据
             label = torch.full((batch_size,), real_label, device=device)
-            output = discriminator(real_err_data.detach(), real_condition.detach())
+            output = discriminator(real_err_data, real_condition)
             d_real = output.mean().item()
 
             # 计算损失
@@ -164,8 +168,8 @@ def train():
 
             # 训练生成数据
             label.fill_(fake_label)
-            fake_err_data = generator(z.detach(), gen_condition.detach())
-            output = discriminator(fake_err_data.detach(), gen_condition.detach())
+            fake_err_data = generator(z, gen_condition)
+            output = discriminator(fake_err_data.detach(), gen_condition)
             d_fake1 = output.mean().item()
 
             # 计算损失

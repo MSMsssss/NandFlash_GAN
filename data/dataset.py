@@ -23,6 +23,24 @@ import torch
 #             self.pe_set = [1] + list(range(1000, 17000, 1000))
 
 
+class TestDataset(torch.utils.data.Dataset):
+    def __init__(self):
+        self.page_num = 2304
+        self.f_num = 16
+        self.data = []
+        self.pe_set = list(range(0, 15000, 500))
+        for pe in self.pe_set:
+            for _ in range(1000):
+                self.data.append((np.ones((self.page_num, self.f_num), dtype=np.float32) * np.exp(pe /1500),
+                                  np.array([pe], dtype=np.float32)))
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        return self.data[index]
+
+
 # 自定义数据集
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, err_data_path="", condition_data_path=""):
