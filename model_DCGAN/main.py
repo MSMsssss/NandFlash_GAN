@@ -209,7 +209,7 @@ def train():
 
             # 生成噪音和标签
             # 噪声采样和假数据条件生成
-            z = torch.randn(batch_size, config.latent_dim, 1, 1)
+            z = torch.randn(batch_size, config.latent_dim, 1, 1, device=device)
             gen_condition = torch.from_numpy(np.random.choice(
                 config.pe_set, (batch_size, config.condition_dim))).to(device=device, dtype=torch.float32)
 
