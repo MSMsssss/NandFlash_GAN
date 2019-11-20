@@ -37,6 +37,8 @@ parser.add_argument("--generator_data_num", type=int, default=1,
 parser.add_argument("--err_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
 parser.add_argument("--condition_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
 parser.add_argument("--test", action="store_true", help="测试模式")
+parser.add_argument("--ngf", type=int, default=32, help="生成器基准通道数")
+parser.add_argument("--ndf", type=int, default=32, help="分类器基准通道数")
 opt = parser.parse_args()
 print(opt)
 
@@ -51,34 +53,44 @@ def weights_init(m):
         m.bias.data.fill_(0)
 
 
+ngf = opt.ngf
+ndf = opt.ndf
+# err_data为2304 * 16只有一个channel
+nc = 1
+
+
 class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
         self.main = nn.Sequential(
             # input is Z, going into a convolution
-            nn.ConvTranspose2d(nz, ngf * 8, 4, 1, 0, bias=False),
+            nn.ConvTranspose2d(config.latent_dim + config.condition_dim, ngf * 16, (4, 2), (1, 1), (0, 0), bias=False),
+            nn.BatchNorm2d(ngf * 16),
+            nn.ReLU(True),
+            # state size. (ngf*16) x 4 x 2
+            nn.ConvTranspose2d(ngf * 16, ngf * 8, (4, 2), (4, 2), (0, 0), bias=False, output_padding=(1, 0)),
             nn.BatchNorm2d(ngf * 8),
             nn.ReLU(True),
-            # state size. (ngf*8) x 4 x 4
-            nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=False),
+            # state size. (ngf*8) x 17 x 4
+            nn.ConvTranspose2d(ngf * 8, ngf * 4, (4, 2), (4, 2), (0, 0), bias=False, dilation=(2, 1), output_padding=(1, 0)),
             nn.BatchNorm2d(ngf * 4),
             nn.ReLU(True),
-            # state size. (ngf*4) x 8 x 8
-            nn.ConvTranspose2d(ngf * 4, ngf * 2, 4, 2, 1, bias=False),
+            # state size. (ngf*4) x 72 x 8
+            nn.ConvTranspose2d(ngf * 4, ngf * 2, (4, 2), (4, 2), (0, 0), bias=False),
             nn.BatchNorm2d(ngf * 2),
             nn.ReLU(True),
-            # state size. (ngf*2) x 16 x 16
-            nn.ConvTranspose2d(ngf * 2,     ngf, 4, 2, 1, bias=False),
+            # state size. (ngf*2) x 288 x 16
+            nn.ConvTranspose2d(ngf * 2, ngf, (4, 3), (4, 1), (0, 1), bias=False),
             nn.BatchNorm2d(ngf),
             nn.ReLU(True),
-            # state size. (ngf) x 32 x 32
-            nn.ConvTranspose2d(    ngf,      nc, 4, 2, 1, bias=False),
+            # state size. (ngf) x 1152 x 16
+            nn.ConvTranspose2d(ngf, nc, (4, 3), (2, 1), (1, 1), bias=False),
             nn.Tanh()
-            # state size. (nc) x 64 x 64
+            # state size. (nc) x 2304 x 16
         )
 
-    def forward(self, input):
-        output = self.main(input)
+    def forward(self, noise, condition):
+        output = self.main(noise)
 
         return output
 
@@ -88,26 +100,30 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         self.main = nn.Sequential(
             # input is (nc) x 64 x 64
-            nn.Conv2d(nc, ndf, 4, 2, 1, bias=False),
+            nn.Conv2d(nc, ndf, (4, 3), (2, 1), (1, 1), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf) x 32 x 32
-            nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),
+            nn.Conv2d(ndf, ndf * 2, (4, 3), (4, 1), (0, 1), bias=False),
             nn.BatchNorm2d(ndf * 2),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*2) x 16 x 16
-            nn.Conv2d(ndf * 2, ndf * 4, 4, 2, 1, bias=False),
+            nn.Conv2d(ndf * 2, ndf * 4, (4, 2), (4, 2), (0, 0), bias=False),
             nn.BatchNorm2d(ndf * 4),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*4) x 8 x 8
-            nn.Conv2d(ndf * 4, ndf * 8, 4, 2, 1, bias=False),
+            nn.Conv2d(ndf * 4, ndf * 8, (4, 2), (4, 2), (0, 0), bias=False, dilation=(2, 1)),
             nn.BatchNorm2d(ndf * 8),
             nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf*4) x 8 x 8
+            nn.Conv2d(ndf * 8, ndf * 16, (4, 2), (4, 2), (0, 0), bias=False),
+            nn.BatchNorm2d(ndf * 16),
+            nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*8) x 4 x 4
-            nn.Conv2d(ndf * 8, 1, 4, 1, 0, bias=False),
+            nn.Conv2d(ndf * 16, 1, (4, 2), (1, 1), (0, 0), bias=False),
             nn.Sigmoid()
         )
 
-    def forward(self, input):
+    def forward(self, input, condition):
         output = self.main(input)
 
         return output.view(-1, 1).squeeze(1)
