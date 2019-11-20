@@ -125,11 +125,9 @@ class Discriminator(nn.Module):
 
         self.fully_connected_layer = nn.Sequential(
             nn.Linear(512 * 4 * 2 + config.condition_dim, 1024),
-            nn.ReLU(True),
-            nn.Dropout(),
+            nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(1024, 1024),
-            nn.ReLU(True),
-            nn.Dropout(),
+            nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(1024, 1),
             nn.Sigmoid()
         )

@@ -43,7 +43,6 @@ class TestDataset(torch.utils.data.Dataset):
 
 def block_normalized(block):
     block = block / block.max()
-    block = (block - block.mean()) / block.std()
 
     return block
 
