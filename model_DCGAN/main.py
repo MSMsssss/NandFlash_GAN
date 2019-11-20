@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 import torch.functional as F
 import numpy as np
-from model_DNN.config import Config
+from model_DCGAN.config import Config
 import torch.utils.data
 from data.dataset import Dataset, TestDataset
 from data.connect_database import Connect, SqlConfig
@@ -25,7 +25,7 @@ parser.add_argument("--g_load_model_path", default="",
 parser.add_argument("--d_load_model_path", default="",
                     help="判别器模型参数保存文件名，必须放置在同目录的save_model文件夹下，如msm.pth")
 parser.add_argument("--cuda", action="store_true", help="使用GPU训练")
-parser.add_argument("--lr", type=float, default=0.002, help="学习速率")
+parser.add_argument("--lr", type=float, default=0.0002, help="学习速率")
 parser.add_argument("--epochs", type=int, default=100, help="训练轮数")
 parser.add_argument("--batch_size", type=int, default=32, help="batch尺寸")
 parser.add_argument("--save_model_epoch", type=int, default=50, help="设置每隔多少轮保存一次模型")
@@ -41,59 +41,76 @@ opt = parser.parse_args()
 print(opt)
 
 
+# 模型权重初始化
+def weights_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        m.weight.data.normal_(0.0, 0.02)
+    elif classname.find('BatchNorm') != -1:
+        m.weight.data.normal_(1.0, 0.02)
+        m.bias.data.fill_(0)
+
+
 class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
-
-        self.condition_norm = nn.BatchNorm1d(config.condition_dim)
-
-        def block(in_feat, out_feat, normalize=True):
-            layers = [nn.Linear(in_feat, out_feat)]
-            if normalize:
-                layers.append(nn.BatchNorm1d(out_feat, 0.8))
-            layers.append(nn.LeakyReLU(0.2, inplace=True))
-            return layers
-
-        self.model = nn.Sequential(
-            *block(config.latent_dim + config.condition_dim, 128, normalize=False),
-            *block(128, 512),
-            *block(512, 1024),
-            *block(1024, 4096),
-            nn.Linear(4096, config.width * config.height)
+        self.main = nn.Sequential(
+            # input is Z, going into a convolution
+            nn.ConvTranspose2d(nz, ngf * 8, 4, 1, 0, bias=False),
+            nn.BatchNorm2d(ngf * 8),
+            nn.ReLU(True),
+            # state size. (ngf*8) x 4 x 4
+            nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ngf * 4),
+            nn.ReLU(True),
+            # state size. (ngf*4) x 8 x 8
+            nn.ConvTranspose2d(ngf * 4, ngf * 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ngf * 2),
+            nn.ReLU(True),
+            # state size. (ngf*2) x 16 x 16
+            nn.ConvTranspose2d(ngf * 2,     ngf, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ngf),
+            nn.ReLU(True),
+            # state size. (ngf) x 32 x 32
+            nn.ConvTranspose2d(    ngf,      nc, 4, 2, 1, bias=False),
+            nn.Tanh()
+            # state size. (nc) x 64 x 64
         )
 
-    def forward(self, noise, condition):
-        # Concatenate label embedding and image to produce input
-        condition = self.condition_norm(condition)
-        gen_input = torch.cat((condition, noise), -1)
-        err_data = self.model(gen_input)
-        err_data = err_data.view(err_data.size(0), config.height, config.width)
-        return err_data
+    def forward(self, input):
+        output = self.main(input)
+
+        return output
 
 
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
-
-        self.model = nn.Sequential(
-            nn.BatchNorm1d(config.condition_dim + config.width * config.height),
-            nn.Linear(config.condition_dim + config.width * config.height, 512),
+        self.main = nn.Sequential(
+            # input is (nc) x 64 x 64
+            nn.Conv2d(nc, ndf, 4, 2, 1, bias=False),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(512, 512),
-            nn.Dropout(0.4),
+            # state size. (ndf) x 32 x 32
+            nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 2),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(512, 512),
-            nn.Dropout(0.4),
+            # state size. (ndf*2) x 16 x 16
+            nn.Conv2d(ndf * 2, ndf * 4, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 4),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(512, 1),
+            # state size. (ndf*4) x 8 x 8
+            nn.Conv2d(ndf * 4, ndf * 8, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 8),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf*8) x 4 x 4
+            nn.Conv2d(ndf * 8, 1, 4, 1, 0, bias=False),
             nn.Sigmoid()
         )
 
-    def forward(self, err_data, condition):
-        # Concatenate label embedding and image to produce input
-        d_in = torch.cat((err_data.view(err_data.size(0), -1), condition), -1)
-        validity = self.model(d_in)
-        return validity.squeeze(1)
+    def forward(self, input):
+        output = self.main(input)
+
+        return output.view(-1, 1).squeeze(1)
 
 
 # 设备
@@ -102,6 +119,8 @@ device = torch.device("cuda:0" if opt.cuda else "cpu")
 # 初始化生成器和判别器
 generator = Generator().to(device)
 discriminator = Discriminator().to(device)
+generator.apply(weights_init)
+discriminator.apply(weights_init)
 
 # 初始化优化器
 optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr, betas=config.betas)

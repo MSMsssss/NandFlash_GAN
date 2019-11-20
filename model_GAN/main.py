@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 import torch.functional as F
 import numpy as np
-from model_DNN.config import Config
+from model_GAN.config import Config
 import torch.utils.data
 from data.dataset import Dataset, TestDataset
 from data.connect_database import Connect, SqlConfig
