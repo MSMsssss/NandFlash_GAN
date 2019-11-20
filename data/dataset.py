@@ -41,9 +41,16 @@ class TestDataset(torch.utils.data.Dataset):
         return self.data[index]
 
 
+def block_normalized(block):
+    block = block / block.max()
+    block = (block - block.mean()) / block.std()
+
+    return block
+
 # 自定义数据集
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, err_data_path="", condition_data_path=""):
+        self.max_pe = 17000
         if err_data_path == "":
             self.load_from_local = False
             # 建立数据库连接
@@ -74,10 +81,18 @@ class Dataset(torch.utils.data.Dataset):
                                         # print("chip:", chip, "ce:", ce, "die", die, "block:", block, "pe:", pe, "加载完成")
 
                 print("数据集：", item, "加载完成")
+
+            for i in range(len(self.data_set)):
+                self.data_set[i][0] = block_normalized(self.data_set[i][0])
+                self.data_set[i][1] = self.data_set[i][1] / self.max_pe
         else:
             self.load_from_local = True
             self.err_data = np.load(err_data_path)
             self.condition_data = np.load(condition_data_path)
+
+            for i in range(self.err_data.shape[0]):
+                self.err_data[i] = block_normalized(self.err_data[i])
+                self.condition_data[i] = self.condition_data[i] / self.max_pe
 
     def __len__(self):
         if self.load_from_local:

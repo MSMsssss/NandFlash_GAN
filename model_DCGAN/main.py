@@ -62,7 +62,7 @@ nc = 1
 class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
-        self.main = nn.Sequential(
+        self.conv_module = nn.Sequential(
             # input is Z, going into a convolution
             nn.ConvTranspose2d(config.latent_dim + config.condition_dim, ngf * 16, (4, 2), (1, 1), (0, 0), bias=False),
             nn.BatchNorm2d(ngf * 16),
@@ -90,43 +90,55 @@ class Generator(nn.Module):
         )
 
     def forward(self, noise, condition):
-        output = self.main(noise)
-
+        input = torch.cat((noise, condition.view(-1, config.condition_dim, 1, 1)), 1)
+        output = self.conv_module(input)
         return output
 
 
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
-        self.main = nn.Sequential(
-            # input is (nc) x 64 x 64
+        self.conv_module = nn.Sequential(
+            # input is (nc) x 2304 x 16
             nn.Conv2d(nc, ndf, (4, 3), (2, 1), (1, 1), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf) x 32 x 32
+            # state size. (ndf)
             nn.Conv2d(ndf, ndf * 2, (4, 3), (4, 1), (0, 1), bias=False),
             nn.BatchNorm2d(ndf * 2),
             nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*2) x 16 x 16
+            # state size. (ndf*2)
             nn.Conv2d(ndf * 2, ndf * 4, (4, 2), (4, 2), (0, 0), bias=False),
             nn.BatchNorm2d(ndf * 4),
             nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*4) x 8 x 8
+            # state size. (ndf*4)
             nn.Conv2d(ndf * 4, ndf * 8, (4, 2), (4, 2), (0, 0), bias=False, dilation=(2, 1)),
             nn.BatchNorm2d(ndf * 8),
             nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*4) x 8 x 8
+            # state size. (ndf*4)
             nn.Conv2d(ndf * 8, ndf * 16, (4, 2), (4, 2), (0, 0), bias=False),
             nn.BatchNorm2d(ndf * 16),
             nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*8) x 4 x 4
-            nn.Conv2d(ndf * 16, 1, (4, 2), (1, 1), (0, 0), bias=False),
+            # state size. (ndf*8)
+            # nn.Conv2d(ndf * 16, 1, (4, 2), (1, 1), (0, 0), bias=False),
+            # nn.Sigmoid()
+        )
+
+        self.fully_connected_layer = nn.Sequential(
+            nn.Linear(512 * 4 * 2 + config.condition_dim, 1024),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(1024, 1024),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(1024, 1),
             nn.Sigmoid()
         )
 
-    def forward(self, input, condition):
-        output = self.main(input)
+    def forward(self, err_data, condition):
+        features = self.conv_module(err_data)
+        input = torch.cat((torch.flatten(features, 1), condition), 1)
 
-        return output.view(-1, 1).squeeze(1)
+        return self.fully_connected_layer(input)
 
 
 # 设备
@@ -177,7 +189,7 @@ def train():
             batch_size = err_data.shape[0]
 
             # 真实数据
-            real_err_data = err_data.to(device)
+            real_err_data = err_data.view(batch_size, 1, config.height, config.width).to(device)
             real_condition = condition.to(device)
 
             # ---------------------
@@ -192,12 +204,12 @@ def train():
             d_real = output.mean().item()
 
             # 计算损失
-            lossD_real = loss_function(output, label)
+            lossD_real = loss_function(output.squeeze(1), label)
             lossD_real.backward()
 
             # 生成噪音和标签
             # 噪声采样和假数据条件生成
-            z = torch.randn((batch_size, config.latent_dim)).to(device=device, dtype=torch.float32)
+            z = torch.randn(batch_size, config.latent_dim, 1, 1)
             gen_condition = torch.from_numpy(np.random.choice(
                 config.pe_set, (batch_size, config.condition_dim))).to(device=device, dtype=torch.float32)
 
@@ -208,7 +220,8 @@ def train():
             d_fake1 = output.mean().item()
 
             # 计算损失
-            lossD_fake = loss_function(output, label)
+            print(output.shape, label.shape)
+            lossD_fake = loss_function(output.squeeze(1), label)
             lossD_fake.backward()
 
             # 总损失
@@ -224,7 +237,7 @@ def train():
             label.fill_(real_label)
             output = discriminator(fake_err_data, gen_condition)
             d_fake2 = output.mean().item()
-            g_loss = loss_function(output, label)
+            g_loss = loss_function(output.squeeze(1), label)
 
             g_loss.backward()
             optimizer_G.step()
