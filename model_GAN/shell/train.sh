@@ -1,4 +1,4 @@
-python ./model_DNN/main.py --train --epochs 500 \
+python ./model_GAN/main.py --train --epochs 500 \
                            --batch_size 64 \
                            --cuda \
                            --err_data_name data.npy \
