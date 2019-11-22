@@ -38,7 +38,8 @@ parser.add_argument("--err_data_name", default="", help="需保存在./data/down
 parser.add_argument("--condition_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
 parser.add_argument("--test", action="store_true", help="测试模式")
 parser.add_argument("--ngf", type=int, default=32, help="生成器基准通道数")
-parser.add_argument("--ndf", type=int, default=8, help="分类器基准通道数")
+parser.add_argument("--ndf", type=int, default=4, help="分类器基准通道数")
+parser.add_argument("--latent_dim", type=int, default=100, help="噪声维度")
 opt = parser.parse_args()
 print(opt)
 
@@ -64,7 +65,7 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
         self.conv_module = nn.Sequential(
             # input is Z, going into a convolution
-            nn.ConvTranspose2d(config.latent_dim + config.condition_dim, ngf * 16, (4, 2), (1, 1), (0, 0), bias=False),
+            nn.ConvTranspose2d(opt.latent_dim + config.condition_dim, ngf * 16, (4, 2), (1, 1), (0, 0), bias=False),
             nn.BatchNorm2d(ngf * 16),
             nn.ReLU(True),
             # state size. (ngf*16) x 4 x 2
@@ -205,7 +206,7 @@ def train():
 
             # 生成噪音和标签
             # 噪声采样和假数据条件生成
-            z = torch.randn(batch_size, config.latent_dim, 1, 1, device=device)
+            z = torch.randn(batch_size, opt.latent_dim, 1, 1, device=device)
             gen_condition = torch.from_numpy(np.random.choice(
                 condition_set, (batch_size, config.condition_dim))).to(device=device, dtype=torch.float32)
 
@@ -254,7 +255,7 @@ def model_eval():
     generator.eval()
     for pe in range(opt.gen_start_pe, opt.gen_end_pe, opt.gen_interval_pe):
         for i in range(opt.generator_data_num):
-            z = torch.randn((1, config.latent_dim), requires_grad=False).to(device)
+            z = torch.randn((1, opt.latent_dim), requires_grad=False).to(device)
 
             # 生成假数据
             gen_err_data = generator(z, torch.tensor([[pe]], dtype=torch.float32).to(device))
