@@ -262,7 +262,7 @@ def model_eval():
                                device=device, requires_grad=False).fill_(((pe / config.max_pe) - 0.5) / 0.5)
 
         gen_err_data = generator(z, condition).squeeze()
-        gen_data_set.append(gen_err_data)
+        gen_data_set.append(gen_err_data.cpu())
 
     s = opt.g_load_model_path
     epoch = int(s[s.rfind("_") + 1:s.rfind(".")])
