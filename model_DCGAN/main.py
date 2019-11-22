@@ -264,8 +264,11 @@ def model_eval():
         gen_err_data = generator(z, condition).squeeze()
         gen_data_set.append(gen_err_data)
 
-    np.save(cur_path + "/gen_data/gen_data.npy", torch.cat(gen_data_set, 0).numpy())
-    np.save(cur_path + "/gen_data/condition.npy",
+    s = opt.g_load_model_path
+    epoch = int(s[s.rfind("_") + 1:s.rfind(".")])
+
+    np.save(cur_path + "/gen_data/gen_data_%s.npy" % epoch, torch.cat(gen_data_set, 0).numpy())
+    np.save(cur_path + "/gen_data/condition_%s.npy" % epoch,
             np.array([opt.gen_start_pe, opt.gen_end_pe, opt.gen_interval_pe], dtype=np.int))
 
 
