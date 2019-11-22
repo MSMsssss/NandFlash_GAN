@@ -22,10 +22,19 @@ class TestDataset(torch.utils.data.Dataset):
         return self.data[index]
 
 
+# 对数据进行归一化和正则化
+def block_normalized(err_data, condition, mean=0.5, std=0.5, max_pe=17000):
+    err_data = err_data / err_data.max()
+    err_data = (err_data - mean) / std
+
+    condition = condition / max_pe
+    condition = (condition - mean) / std
+    return err_data, condition
+
+
 # 自定义数据集
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, err_data_path="", condition_data_path=""):
-        self.max_pe = 17000
         if err_data_path == "":
             # 建立数据库连接
             self.connect = Connect(SqlConfig.train_set_database)
@@ -63,19 +72,10 @@ class Dataset(torch.utils.data.Dataset):
             self.condition_data = np.load(condition_data_path)
 
         for i in range(self.err_data.shape[0]):
-            self.err_data[i], self.condition_data[i] = self.block_normalized(self.err_data[i], self.condition_data[i])
+            self.err_data[i], self.condition_data[i] = block_normalized(self.err_data[i], self.condition_data[i])
 
     def __len__(self):
         return self.err_data.shape[0]
 
     def __getitem__(self, index):
         return self.err_data[index], self.condition_data[index]
-
-    # 对数据进行归一化和正则化
-    def block_normalized(self, err_data, condition, mean=0.5, std=0.5):
-        err_data = err_data / err_data.max()
-        err_data = (err_data - mean) / std
-
-        condition = condition / self.max_pe
-        condition = (condition - mean) / std
-        return err_data, condition

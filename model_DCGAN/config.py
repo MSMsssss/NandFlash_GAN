@@ -9,5 +9,6 @@ class Config:
         self.latent_dim = 10  # 输入噪声的维度
         self.condition_dim = 1  # 输入条件的维度
         self.betas = (0.5, 0.999)  # 用于计算梯度以及梯度平方的运行平均值的系数
-        self.pe_set = [1] + list(range(100, 17000, 500))
+        self.max_pe = 17000
+        self.pe_set = [1] + list(range(100, self.max_pe, 500))
         self.model_saved_path = os.path.dirname(os.path.abspath(__file__)) + "/save_model/"
