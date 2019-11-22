@@ -38,7 +38,7 @@ parser.add_argument("--err_data_name", default="", help="需保存在./data/down
 parser.add_argument("--condition_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
 parser.add_argument("--test", action="store_true", help="测试模式")
 parser.add_argument("--ngf", type=int, default=32, help="生成器基准通道数")
-parser.add_argument("--ndf", type=int, default=32, help="分类器基准通道数")
+parser.add_argument("--ndf", type=int, default=8, help="分类器基准通道数")
 opt = parser.parse_args()
 print(opt)
 
@@ -179,7 +179,6 @@ def train():
     fake_label = 0
 
     condition_set = [((x / config.max_pe) - 0.5) / 0.5 for x in config.pe_set]
-    print(condition_set)
 
     for epoch in range(opt.epochs):
         for i, (err_data, condition) in enumerate(real_data_loader):
