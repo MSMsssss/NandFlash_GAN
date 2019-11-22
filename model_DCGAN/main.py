@@ -126,11 +126,12 @@ class Discriminator(nn.Module):
         )
 
     def forward(self, err_data, condition):
-        for i in range(opt.batch_size):
+        batch_size = err_data.shape[0]
+        for i in range(batch_size):
             for j in range(config.condition_dim):
                 self.condition_channel[i][j].fill_(condition[i][j])
 
-        input = torch.cat((err_data, self.condition_channel), 1)
+        input = torch.cat((err_data, self.condition_channel[:batch_size]), 1)
         return self.conv_module(input)
 
 
