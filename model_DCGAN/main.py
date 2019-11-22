@@ -27,7 +27,7 @@ parser.add_argument("--d_load_model_path", default="",
 parser.add_argument("--cuda", action="store_true", help="使用GPU训练")
 parser.add_argument("--lr", type=float, default=0.0002, help="学习速率")
 parser.add_argument("--epochs", type=int, default=100, help="训练轮数")
-parser.add_argument("--batch_size", type=int, default=32, help="batch尺寸")
+parser.add_argument("--batch_size", type=int, default=64, help="batch尺寸")
 parser.add_argument("--save_model_epoch", type=int, default=50, help="设置每隔多少轮保存一次模型")
 parser.add_argument("--gen_start_pe", type=int, default=0, help="生成假数据的开始pe")
 parser.add_argument("--gen_end_pe", type=int, default=17000, help="生成假数据的结束pe")
