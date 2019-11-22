@@ -218,7 +218,6 @@ def train():
             d_fake1 = output.mean().item()
 
             # 计算损失
-            print(output.shape, label.shape)
             lossD_fake = loss_function(output.squeeze(1), label)
             lossD_fake.backward()
 
