@@ -1,10 +1,10 @@
 import os
 import sys
 
-root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+cur_path = os.path.dirname(os.path.abspath(__file__))
+root_path = os.path.dirname(cur_path)
 sys.path.append(root_path)
-sys.path.append(root_path + "\\model_DNN")
-sys.path.append(root_path + "\\data")
+sys.path.append(cur_path)
 
 import argparse
 import torch
@@ -30,9 +30,9 @@ parser.add_argument("--epochs", type=int, default=100, help="训练轮数")
 parser.add_argument("--batch_size", type=int, default=32, help="batch尺寸")
 parser.add_argument("--save_model_epoch", type=int, default=50, help="设置每隔多少轮保存一次模型")
 parser.add_argument("--gen_start_pe", type=int, default=0, help="生成假数据的开始pe")
-parser.add_argument("--gen_end_pe", type=int, default=15000, help="生成假数据的结束pe")
-parser.add_argument("--gen_interval_pe", type=int, default=1000, help="生成假数据的间隔pe")
-parser.add_argument("--generator_data_num", type=int, default=1,
+parser.add_argument("--gen_end_pe", type=int, default=17000, help="生成假数据的结束pe")
+parser.add_argument("--gen_interval_pe", type=int, default=500, help="生成假数据的间隔pe")
+parser.add_argument("--generator_data_num", type=int, default=200,
                     help="每个pe生成generator_data_num个数据")
 parser.add_argument("--err_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
 parser.add_argument("--condition_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
@@ -253,14 +253,20 @@ def train():
 def model_eval():
     connect = Connect(SqlConfig.generator_database)
     generator.eval()
+    gen_data_set = []
     for pe in range(opt.gen_start_pe, opt.gen_end_pe, opt.gen_interval_pe):
-        for i in range(opt.generator_data_num):
-            z = torch.randn((1, opt.latent_dim), requires_grad=False).to(device)
+        z = torch.randn(opt.generator_data_num, opt.latent_dim, 1, 1, device=device)
 
-            # 生成假数据
-            gen_err_data = generator(z, torch.tensor([[pe]], dtype=torch.float32).to(device))
-            connect.insert_block_data(gen_err_data, pe)
-            print("(序号: %s, pe: %s) fake block已导入数据库" % (i, pe))
+        # 生成假数据
+        condition = torch.ones((opt.generator_data_num, config.condition_dim),
+                               device=device, requires_grad=False).fill_(((pe / config.max_pe) - 0.5) / 0.5)
+
+        gen_err_data = generator(z, condition).squeeze()
+        gen_data_set.append(gen_err_data)
+
+    np.save(cur_path + "/gen_data/gen_data.npy", torch.cat(gen_data_set, 0).numpy())
+    np.save(cur_path + "/gen_data/condition.npy",
+            np.array([opt.gen_start_pe, opt.gen_end_pe, opt.gen_interval_pe], dtype=np.int))
 
 
 def run():
