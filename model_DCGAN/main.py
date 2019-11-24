@@ -264,7 +264,8 @@ def model_eval():
 
         gen_err_data = generator(z, condition).squeeze()
         gen_data_set.append(gen_err_data.detach().cpu())
-        condition_set.append(condition.detach().cpu())
+        condition_set.append(torch.zeros((opt.generator_data_num, config.condition_dim),
+                                         dtype=torch.int32).fill_(pe).detach().cpu())
 
     s = opt.g_load_model_path
     epoch = int(s[s.rfind("_") + 1:s.rfind(".")])

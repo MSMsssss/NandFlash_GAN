@@ -7,15 +7,41 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-err_data = np.load(cur_path + "/download_data/data.npy")
-pe_data = np.load(cur_path + "/download_data/condition.npy").squeeze(1)
+# err_data = np.load(cur_path + "/download_data/data.npy")
+# pe_data = np.load(cur_path + "/download_data/condition.npy").squeeze(1)
+err_data = np.load(cur_path + "/gen_data/gen_data_100.npy")
+# pe_data = np.load(cur_path + "/gen_data/gen_condition_100.npy").squeeze(1)
+pe_set = list(range(0, 17000, 1000))
+pe_data = []
+for pe in pe_set:
+    pe_data += 200 * [pe]
 
-r"""
-每个块对应一个错误矩阵(shape:2304 * 16),数据集中每个pe对应一个块错误矩阵集合｛mat1, mat2, ... ,matn};
-将集合内的错误矩阵相加，统计出该pe值下，block中每个位置的总错误次数，之后将统计情况转化为灰度图，错误次数越多，
-在灰度图中颜色越趋近于黑色。
-"""
+
+def count_gen_data():
+    total_dict = {}
+    count_dict = {}
+    for pe in pe_set:
+        total_dict[int(pe)] = np.zeros((2304, 16), dtype=np.float64)
+        count_dict[int(pe)] = 0
+
+    for i in range(err_data.shape[0]):
+        err_data[i] = err_data[i] - err_data[i].min()
+        err_data[i] = err_data[i] / err_data[i].max()
+        total_dict[int(pe_data[i])] += err_data[i].astype(dtype=np.float64)
+        count_dict[int(pe_data[i])] += 1
+
+    for pe in total_dict.keys():
+        total_dict[pe] = (255 - total_dict[pe] * 255).astype(np.uint8)
+        cv2.imwrite(cur_path + "/count_img/fake/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), total_dict[pe])
+
+
 def count_frequency():
+    r"""
+    每个块对应一个错误矩阵(shape:2304 * 16),数据集中每个pe对应一个块错误矩阵集合｛mat1, mat2, ... ,matn};
+    将集合内的错误矩阵相加，统计出该pe值下，block中每个位置的总错误次数，之后将统计情况转化为灰度图，错误次数越多，
+    在灰度图中颜色越趋近于黑色。
+    """
+
     pe_set = set(list(pe_data))
     total_dict = {}
     count_dict = {}
@@ -58,5 +84,5 @@ def count_total_err_num():
 
 
 if __name__ == "__main__":
-    count_frequency()
+    count_gen_data()
 
