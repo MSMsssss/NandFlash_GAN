@@ -271,7 +271,7 @@ def model_eval():
     epoch = int(s[s.rfind("_") + 1:s.rfind(".")])
 
     np.save(cur_path + "/gen_data/gen_data_%s.npy" % epoch, torch.cat(gen_data_set, 0).numpy())
-    np.save(cur_path + "/gen_data/condition_%s.npy" % epoch, torch.cat(condition_set, 0).numpy())
+    np.save(cur_path + "/gen_data/gen_condition_%s.npy" % epoch, torch.cat(condition_set, 0).numpy())
 
 
 def run():

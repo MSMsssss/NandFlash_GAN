@@ -10,14 +10,11 @@ import matplotlib.pyplot as plt
 # err_data = np.load(cur_path + "/download_data/data.npy")
 # pe_data = np.load(cur_path + "/download_data/condition.npy").squeeze(1)
 err_data = np.load(cur_path + "/gen_data/gen_data_100.npy")
-# pe_data = np.load(cur_path + "/gen_data/gen_condition_100.npy").squeeze(1)
-pe_set = list(range(0, 17000, 1000))
-pe_data = []
-for pe in pe_set:
-    pe_data += 200 * [pe]
+pe_data = np.load(cur_path + "/gen_data/condition_100.npy").squeeze(1)
 
 
 def count_gen_data():
+    pe_set = set(list(pe_data))
     total_dict = {}
     count_dict = {}
     for pe in pe_set:
@@ -25,12 +22,12 @@ def count_gen_data():
         count_dict[int(pe)] = 0
 
     for i in range(err_data.shape[0]):
-        err_data[i] = err_data[i] - err_data[i].min()
-        err_data[i] = err_data[i] / err_data[i].max()
         total_dict[int(pe_data[i])] += err_data[i].astype(dtype=np.float64)
         count_dict[int(pe_data[i])] += 1
 
     for pe in total_dict.keys():
+        total_dict[pe] = total_dict[pe] - total_dict[pe].min()
+        total_dict[pe] = total_dict[pe] / total_dict[pe].max()
         total_dict[pe] = (255 - total_dict[pe] * 255).astype(np.uint8)
         cv2.imwrite(cur_path + "/count_img/fake/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), total_dict[pe])
 
