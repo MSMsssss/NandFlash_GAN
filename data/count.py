@@ -7,8 +7,8 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-err_data = np.load(cur_path + "/download_data/data_all.npy")
-pe_data = np.load(cur_path + "/download_data/condition_all.npy").squeeze(1)
+err_data = np.load(cur_path + "/download_data/data.npy")
+pe_data = np.load(cur_path + "/download_data/condition.npy").squeeze(1)
 
 r"""
 每个块对应一个错误矩阵(shape:2304 * 16),数据集中每个pe对应一个块错误矩阵集合｛mat1, mat2, ... ,matn};
@@ -58,5 +58,5 @@ def count_total_err_num():
 
 
 if __name__ == "__main__":
-    count_total_err_num()
+    count_frequency()
 

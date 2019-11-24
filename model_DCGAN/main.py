@@ -254,6 +254,7 @@ def model_eval():
     connect = Connect(SqlConfig.generator_database)
     generator.eval()
     gen_data_set = []
+    condition_set = []
     for pe in range(opt.gen_start_pe, opt.gen_end_pe, opt.gen_interval_pe):
         z = torch.randn(opt.generator_data_num, opt.latent_dim, 1, 1, device=device)
 
@@ -263,13 +264,13 @@ def model_eval():
 
         gen_err_data = generator(z, condition).squeeze()
         gen_data_set.append(gen_err_data.detach().cpu())
+        condition_set.append(condition.detach().cpu())
 
     s = opt.g_load_model_path
     epoch = int(s[s.rfind("_") + 1:s.rfind(".")])
 
-    np.save(cur_path + "/gen_data/gen_data_%s.npy" % epoch)
-    np.save(cur_path + "/gen_data/condition_%s.npy" % epoch,
-            np.array([opt.gen_start_pe, opt.gen_end_pe, opt.gen_interval_pe], dtype=np.int))
+    np.save(cur_path + "/gen_data/gen_data_%s.npy" % epoch, torch.cat(gen_data_set, 0).numpy())
+    np.save(cur_path + "/gen_data/condition_%s.npy" % epoch, torch.cat(condition_set, 0).numpy())
 
 
 def run():
