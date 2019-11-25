@@ -20,26 +20,29 @@ config = Config()
 parser = argparse.ArgumentParser()
 parser.add_argument("--train", action="store_true", help="训练模型")
 parser.add_argument("--eval", action="store_true", help="运行模型")
-parser.add_argument("--g_load_model_path", default="",
-                    help="生成器模型参数保存文件名，必须放置在同目录的save_model文件夹下，如msm.pth")
-parser.add_argument("--d_load_model_path", default="",
-                    help="判别器模型参数保存文件名，必须放置在同目录的save_model文件夹下，如msm.pth")
-parser.add_argument("--cuda", action="store_true", help="使用GPU训练")
+# train与eval共用参数
+parser.add_argument("--cuda", action="store_true", help="使用GPU")
+parser.add_argument("--ngf", type=int, default=32, help="生成器基准通道数")
+parser.add_argument("--ndf", type=int, default=4, help="分类器基准通道数")
+parser.add_argument("--latent_dim", type=int, default=100, help="噪声维度")
+# train参数
 parser.add_argument("--lr", type=float, default=0.0002, help="学习速率")
 parser.add_argument("--epochs", type=int, default=100, help="训练轮数")
 parser.add_argument("--batch_size", type=int, default=64, help="batch尺寸")
 parser.add_argument("--save_model_epoch", type=int, default=50, help="设置每隔多少轮保存一次模型")
+parser.add_argument("--err_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
+parser.add_argument("--condition_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
+parser.add_argument("--test", action="store_true", help="测试模式")
+# eval参数
+parser.add_argument("--g_load_model_path", default="",
+                    help="生成器模型参数保存文件名，必须放置在同目录的save_model文件夹下，如msm.pth")
+parser.add_argument("--d_load_model_path", default="",
+                    help="判别器模型参数保存文件名，必须放置在同目录的save_model文件夹下，如msm.pth")
 parser.add_argument("--gen_start_pe", type=int, default=0, help="生成假数据的开始pe")
 parser.add_argument("--gen_end_pe", type=int, default=17000, help="生成假数据的结束pe")
 parser.add_argument("--gen_interval_pe", type=int, default=500, help="生成假数据的间隔pe")
 parser.add_argument("--generator_data_num", type=int, default=200,
                     help="每个pe生成generator_data_num个数据")
-parser.add_argument("--err_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
-parser.add_argument("--condition_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
-parser.add_argument("--test", action="store_true", help="测试模式")
-parser.add_argument("--ngf", type=int, default=32, help="生成器基准通道数")
-parser.add_argument("--ndf", type=int, default=4, help="分类器基准通道数")
-parser.add_argument("--latent_dim", type=int, default=100, help="噪声维度")
 opt = parser.parse_args()
 print(opt)
 
