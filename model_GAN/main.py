@@ -138,6 +138,8 @@ def train():
     real_label = 1
     fake_label = 0
 
+    condition_set = [((x / config.max_pe) - 0.5) / 0.5 for x in config.pe_set]
+
     for epoch in range(opt.epochs):
         for i, (err_data, condition) in enumerate(real_data_loader):
             batch_size = err_data.shape[0]
@@ -165,7 +167,7 @@ def train():
             # 噪声采样和假数据条件生成
             z = torch.randn((batch_size, config.latent_dim)).to(device=device, dtype=torch.float32)
             gen_condition = torch.from_numpy(np.random.choice(
-                config.pe_set, (batch_size, config.condition_dim))).to(device=device, dtype=torch.float32)
+                condition_set, (batch_size, config.condition_dim))).to(device=device, dtype=torch.float32)
 
             # 训练生成数据
             label.fill_(fake_label)
