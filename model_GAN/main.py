@@ -25,14 +25,14 @@ parser.add_argument("--g_load_model_path", default="",
 parser.add_argument("--d_load_model_path", default="",
                     help="判别器模型参数保存文件名，必须放置在同目录的save_model文件夹下，如msm.pth")
 parser.add_argument("--cuda", action="store_true", help="使用GPU训练")
-parser.add_argument("--lr", type=float, default=0.002, help="学习速率")
-parser.add_argument("--epochs", type=int, default=100, help="训练轮数")
-parser.add_argument("--batch_size", type=int, default=32, help="batch尺寸")
-parser.add_argument("--save_model_epoch", type=int, default=50, help="设置每隔多少轮保存一次模型")
+parser.add_argument("--lr", type=float, default=0.0002, help="学习速率")
+parser.add_argument("--epochs", type=int, default=200, help="训练轮数")
+parser.add_argument("--batch_size", type=int, default=64, help="batch尺寸")
+parser.add_argument("--save_model_epoch", type=int, default=20, help="设置每隔多少轮保存一次模型")
 parser.add_argument("--gen_start_pe", type=int, default=0, help="生成假数据的开始pe")
 parser.add_argument("--gen_end_pe", type=int, default=15000, help="生成假数据的结束pe")
 parser.add_argument("--gen_interval_pe", type=int, default=1000, help="生成假数据的间隔pe")
-parser.add_argument("--generator_data_num", type=int, default=1,
+parser.add_argument("--generator_data_num", type=int, default=100,
                     help="每个pe生成generator_data_num个数据")
 parser.add_argument("--err_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
 parser.add_argument("--condition_data_name", default="", help="需保存在./data/download_data下，为空时从数据库读取")
