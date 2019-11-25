@@ -9,8 +9,21 @@ import matplotlib.pyplot as plt
 
 err_data = np.load(cur_path + "/download_data/data_all.npy")
 pe_data = np.load(cur_path + "/download_data/condition_all.npy").squeeze(1)
-# err_data = np.load(root_path + "/model_DCGAN/gen_data/gen_data_40.npy")
-# pe_data = np.load(root_path + "/model_DCGAN/gen_data/gen_condition_40.npy").squeeze(1)
+# err_data = np.load(root_path + "/model_GAN/gen_data/gen_data_100.npy")
+# pe_data = np.load(root_path + "/model_GAN/gen_data/gen_condition_100.npy").squeeze(1)
+
+
+def norm_ip(img, min, max):
+    img = img.clip(min, max)
+    img = (img - min) / (max - min + 1e-5)
+    return img
+
+
+def norm_range(t, range=None):
+    if range is not None:
+        return norm_ip(t, range[0], range[1])
+    else:
+        return norm_ip(t, float(t.min()), float(t.max()))
 
 
 def show_gen_data_pe(pe, dset='real'):
@@ -39,7 +52,7 @@ def count_gen_data(num):
             count_dict[int(pe_data[i])] += 1
 
     for pe in total_dict.keys():
-        total_dict[pe] = total_dict[pe] / 2 + 0.5
+        total_dict[pe] = norm_range(total_dict[pe])
         total_dict[pe] = (255 - total_dict[pe] * 255).astype(np.uint8)
         cv2.imwrite(cur_path + "/count_img/fake/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), total_dict[pe])
 
@@ -94,5 +107,5 @@ def count_total_err_num():
 
 
 if __name__ == "__main__":
-    print(err_data.max())
+    print(err_data.mean())
 
