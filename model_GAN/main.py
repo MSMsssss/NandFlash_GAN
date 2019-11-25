@@ -59,7 +59,8 @@ class Generator(nn.Module):
             *block(128, 512),
             *block(512, 1024),
             *block(1024, 4096),
-            nn.Linear(4096, config.width * config.height)
+            nn.Linear(4096, config.width * config.height),
+            nn.Tanh()
         )
 
     def forward(self, noise, condition):

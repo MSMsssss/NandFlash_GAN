@@ -22,8 +22,9 @@ def count_gen_data():
         count_dict[int(pe)] = 0
 
     for i in range(err_data.shape[0]):
-        total_dict[int(pe_data[i])] += err_data[i].astype(dtype=np.float64)
-        count_dict[int(pe_data[i])] += 1
+        if count_dict[int(pe_data[i])] < 20:
+            total_dict[int(pe_data[i])] += err_data[i].astype(dtype=np.float64)
+            count_dict[int(pe_data[i])] += 1
 
     for pe in total_dict.keys():
         total_dict[pe] = total_dict[pe] - total_dict[pe].min()
