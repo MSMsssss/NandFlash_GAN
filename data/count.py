@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 
 # err_data = np.load(cur_path + "/download_data/data.npy")
 # pe_data = np.load(cur_path + "/download_data/condition.npy").squeeze(1)
-err_data = np.load(cur_path + "/gen_data/gen_data_100.npy")
-pe_data = np.load(cur_path + "/gen_data/condition_100.npy").squeeze(1)
+err_data = np.load(root_path + "/model_DCGAN/gen_data/gen_data_100.npy")
+pe_data = np.load(root_path + "/model_DCGAN/gen_data/gen_condition_100.npy").squeeze(1)
 
 
 def count_gen_data():
