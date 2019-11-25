@@ -16,6 +16,7 @@ class SqlConfig(object):
         self.cursorclass = pymysql.cursors.DictCursor  # 游标类型
         self.page_num = 2304  # 每个块含有的page数目
         self.f_num = 16
+        self.page_type = {"SLC": 0, "MLC_LP": 1, "MLC_UP": 2, "TLC_LP": 3, "TLC_UP": 4, "TLC_EX": 5}
 
 
 def string_handle(string):
@@ -39,6 +40,10 @@ class Connect:
 
         self.sql_get_block = """select f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15 
         from tread where testID = %s and pe = %s and chip = %s and ce = %s and die = %s and block = %s
+        """
+
+        self.sql_get_block_page_info = """select pagetype from tread where 
+        testID = %s and pe = %s and chip = %s and ce = %s and die = %s and block = %s
         """
 
         self.sql_insert_page = """insert into generator_data(
@@ -135,6 +140,25 @@ class Connect:
         with self.connection.cursor() as cursor:
             cursor.execute(self.sql_sum_block_err, (new_block_id, new_block_id))
         self.connection.commit()
+
+    # 获取块的pagetype信息
+    def get_block_page_info(self, testID, pe, chip, ce, die, block):
+        # 执行此函数必须使用训练集数据库
+        if self.config.db != SqlConfig.train_set_database:
+            raise RuntimeError("used error database!")
+
+        with self.connection.cursor() as cursor:
+            cursor.execute(self.sql_get_block_page_info, (testID, pe, chip, ce, die, block))
+            data = cursor.fetchall()
+            if len(data) != self.config.page_num:
+                return None
+
+            result = np.zeros((self.config.page_num,), dtype=np.int32)
+
+            for page_index in range(self.config.page_num):
+                    result[page_index] = self.config.page_type[data[page_index]["pagetype"]]
+
+            return result
 
 
 if __name__ == "__main__":
