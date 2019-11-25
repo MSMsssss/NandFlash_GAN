@@ -220,7 +220,7 @@ def model_eval():
     gen_data_set = []
     condition_set = []
     for pe in range(opt.gen_start_pe, opt.gen_end_pe, opt.gen_interval_pe):
-        z = torch.randn(opt.generator_data_num, opt.latent_dim, device=device)
+        z = torch.randn(opt.generator_data_num, config.latent_dim, device=device)
 
         # 生成假数据
         condition = torch.ones((opt.generator_data_num, config.condition_dim),
