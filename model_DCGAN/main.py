@@ -256,6 +256,11 @@ def train():
 def model_eval():
     connect = Connect(SqlConfig.generator_database)
     generator.eval()
+    discriminator.eval()
+
+    generator.requires_grad_(False)
+    discriminator.requires_grad_(False)
+
     gen_data_set = []
     condition_set = []
     for pe in range(opt.gen_start_pe, opt.gen_end_pe, opt.gen_interval_pe):
