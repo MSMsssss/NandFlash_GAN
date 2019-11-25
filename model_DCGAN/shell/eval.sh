@@ -8,6 +8,6 @@ python ./model_DCGAN/main.py --eval \
                            --gen_start_pe 0 \
                            --gen_end_pe 17000 \
                            --gen_interval_pe 500 \
-                           ----generator_data_num 200
+                           --generator_data_num 200
 
 
