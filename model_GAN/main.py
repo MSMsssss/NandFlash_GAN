@@ -1,9 +1,10 @@
 import os
 import sys
 
-root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+cur_path = os.path.dirname(os.path.abspath(__file__))
+root_path = os.path.dirname(cur_path)
 sys.path.append(root_path)
-sys.path.append(root_path + "\\data")
+sys.path.append(cur_path)
 
 import argparse
 import torch
@@ -211,14 +212,32 @@ def train():
 def model_eval():
     connect = Connect(SqlConfig.generator_database)
     generator.eval()
-    for pe in range(opt.gen_start_pe, opt.gen_end_pe, opt.gen_interval_pe):
-        for i in range(opt.generator_data_num):
-            z = torch.randn((1, config.latent_dim), requires_grad=False).to(device)
+    discriminator.eval()
 
-            # 生成假数据
-            gen_err_data = generator(z, torch.tensor([[pe]], dtype=torch.float32).to(device))
-            connect.insert_block_data(gen_err_data, pe)
-            print("(序号: %s, pe: %s) fake block已导入数据库" % (i, pe))
+    generator.requires_grad_(False)
+    discriminator.requires_grad_(False)
+
+    gen_data_set = []
+    condition_set = []
+    for pe in range(opt.gen_start_pe, opt.gen_end_pe, opt.gen_interval_pe):
+        z = torch.randn(opt.generator_data_num, opt.latent_dim, device=device)
+
+        # 生成假数据
+        condition = torch.ones((opt.generator_data_num, config.condition_dim),
+                               device=device, requires_grad=False).fill_(((pe / config.max_pe) - 0.5) / 0.5)
+
+        gen_err_data = generator(z, condition).squeeze()
+        gen_data_set.append(gen_err_data.detach().cpu())
+        condition_set.append(torch.zeros((opt.generator_data_num, config.condition_dim),
+                                         dtype=torch.int32).fill_(pe).detach().cpu())
+        print("pe: %s is done" % pe)
+    print("all is done")
+
+    s = opt.g_load_model_path
+    epoch = int(s[s.rfind("_") + 1:s.rfind(".")])
+
+    np.save(cur_path + "/gen_data/gen_data_%s.npy" % epoch, torch.cat(gen_data_set, 0).numpy())
+    np.save(cur_path + "/gen_data/gen_condition_%s.npy" % epoch, torch.cat(condition_set, 0).numpy())
 
 
 def run():
