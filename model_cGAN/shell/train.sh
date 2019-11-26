@@ -1,8 +1,6 @@
 python ./model_cGAN/main.py --train \
                            --cuda \
-                           --ngf 128 \
-                           --ndf 32 \
-                           --latent_dim 100 \
+                           --latent_dim 20 \
                            --epochs 200 \
                            --batch_size 64 \
                            --err_data_name data.npy \

@@ -1,8 +1,6 @@
 python ./model_cGAN/main.py --eval \
                            --cuda \
-                           --ngf 128 \
-                           --ndf 32 \
-                           --latent_dim 100 \
+                           --latent_dim 20 \
                            --g_load_model_path generator_epoch_100.pth \
                            --d_load_model_path discriminator_epoch_100.pth \
                            --gen_start_pe 0 \
