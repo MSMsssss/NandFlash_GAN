@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 import torch
 from data.connect_database import Connect, SqlConfig
 
-err_data = np.load(cur_path + "/download_data/data_all.npy")
-pe_data = np.load(cur_path + "/download_data/condition_all.npy").squeeze(1)
-# err_data = np.load(cur_path + "/gen_data/gen_data_60.npy")
-# pe_data = np.load(cur_path + "/gen_data/gen_condition_60.npy").squeeze(1)
+# err_data = np.load(cur_path + "/download_data/data_all.npy")
+# pe_data = np.load(cur_path + "/download_data/condition_all.npy").squeeze(1)
+err_data = np.load(cur_path + "/gen_data/gen_data_200.npy")
+pe_data = np.load(cur_path + "/gen_data/gen_condition_200.npy").squeeze(1)
 
 
 def norm_ip(img, min, max):
@@ -38,7 +38,10 @@ def show_gen_data_pe(pe, dset='real'):
             if dset != 'real':
                 err_data[i] = err_data[i] - err_data[i].min()
             err_data[i] = err_data[i] / err_data[i].max()
-            img = 255 - err_data[i] * 255
+            err_data[i] = 255 - err_data[i] * 255
+            img = np.zeros((2304, 32), dtype=np.uint8)
+            for j in range(2304):
+                img[j] = 32 * [err_data[i][j]]
             id += 1
             cv2.imwrite(cur_path + "/count_img/%s/pe_%s_id_%s.bmp" % (dset, pe, id), img)
 
@@ -64,7 +67,7 @@ def count_gen_data():
         img = np.zeros((2304, 32), dtype=np.uint8)
         for i in range(2304):
             img[i] = 32 * [total_dict[pe][i]]
-        cv2.imwrite(cur_path + "/count_img/real/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), img)
+        cv2.imwrite(cur_path + "/count_img/fake/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), img)
 
 
 def count_frequency():
@@ -118,4 +121,4 @@ def count_total_err_num():
 
 
 if __name__ == "__main__":
-    count_gen_data()
+    show_gen_data_pe(0, 'fake')
