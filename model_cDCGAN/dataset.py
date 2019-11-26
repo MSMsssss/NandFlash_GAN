@@ -4,24 +4,6 @@ import numpy as np
 import torch
 
 
-class TestDataset(torch.utils.data.Dataset):
-    def __init__(self):
-        self.page_num = 2304
-        self.f_num = 16
-        self.data = []
-        self.pe_set = list(range(0, 15000, 500))
-        for pe in self.pe_set:
-            for _ in range(1000):
-                self.data.append((np.ones((self.page_num, self.f_num), dtype=np.float32) * np.exp(pe /1500),
-                                  np.array([pe], dtype=np.float32)))
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        return self.data[index]
-
-
 # 对数据进行归一化和正则化
 def block_normalized(err_data, condition, mean=0.5, std=0.5, max_pe=17000):
     err_data = err_data / err_data.max()

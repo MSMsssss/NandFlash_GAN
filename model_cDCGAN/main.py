@@ -13,7 +13,7 @@ import torch.functional as F
 import numpy as np
 from model_cDCGAN.config import Config
 import torch.utils.data
-from model_cDCGAN.dataset import Dataset, TestDataset
+from model_cDCGAN.dataset import Dataset
 from data.connect_database import Connect, SqlConfig
 
 config = Config()
@@ -76,7 +76,8 @@ class Generator(nn.Module):
             nn.BatchNorm2d(ngf * 8),
             nn.ReLU(True),
             # state size. (ngf*8) x 17 x 4
-            nn.ConvTranspose2d(ngf * 8, ngf * 4, (4, 2), (4, 2), (0, 0), bias=False, dilation=(2, 1), output_padding=(1, 0)),
+            nn.ConvTranspose2d(ngf * 8, ngf * 4, (4, 2), (4, 2), (0, 0), bias=False, dilation=(2, 1),
+                               output_padding=(1, 0)),
             nn.BatchNorm2d(ngf * 4),
             nn.ReLU(True),
             # state size. (ngf*4) x 72 x 8
@@ -165,14 +166,12 @@ def load_model(g_model_path, d_model_path):
 def train():
     # 初始化数据集
     print("加载数据中...")
-    if opt.test:
-        real_data_set = TestDataset()
+
+    if opt.err_data_name != "":
+        real_data_set = Dataset(err_data_path=root_path + "/data/download_data/" + opt.err_data_name,
+                                condition_data_path=root_path + "/data/download_data/" + opt.condition_data_name)
     else:
-        if opt.err_data_name != "":
-            real_data_set = Dataset(err_data_path=root_path + "/data/download_data/" + opt.err_data_name,
-                                    condition_data_path=root_path + "/data/download_data/" + opt.condition_data_name)
-        else:
-            real_data_set = Dataset()
+        real_data_set = Dataset()
     real_data_loader = torch.utils.data.DataLoader(dataset=real_data_set, batch_size=opt.batch_size, shuffle=True)
     print('数据加载完成，块数据:%s条' % len(real_data_set))
 

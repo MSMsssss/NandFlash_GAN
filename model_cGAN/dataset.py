@@ -4,24 +4,6 @@ import numpy as np
 import torch
 
 
-class TestDataset(torch.utils.data.Dataset):
-    def __init__(self):
-        self.page_num = 2304
-        self.f_num = 16
-        self.data = []
-        self.pe_set = list(range(0, 15000, 500))
-        for pe in self.pe_set:
-            for _ in range(1000):
-                self.data.append((np.ones((self.page_num, self.f_num), dtype=np.float32) * np.exp(pe /1500),
-                                  np.array([pe], dtype=np.float32)))
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        return self.data[index]
-
-
 # 对数据进行归一化和正则化
 def block_normalized(err_data, condition, mean=0.5, std=0.5, max_pe=17000):
     err_data = err_data / err_data.max()
@@ -47,7 +29,10 @@ class Dataset(torch.utils.data.Dataset):
             self.range = (0, len(self.config))
             # self.range = (0, 1)
             # 读取的pe集合
-            self.pe_set = [1] + list(range(500, 17000, 500))
+            temp = range(500, 17000, 500)
+            self.pe_set = [1]
+            for pe in temp:
+                self.pe_set += list(range(pe-2, pe+3))
 
             print("全部数据集信息：")
             for x in self.config[self.range[0]:self.range[1]]:
@@ -59,7 +44,7 @@ class Dataset(torch.utils.data.Dataset):
                         for die in item["die"]:
                             for block in item["block"]:
                                 for pe in self.pe_set:
-                                    data = self.connect.get_block_data(item["testID"], pe, chip, ce, die, block)
+                                    data = self.connect.get_block_page_data(item["testID"], pe, chip, ce, die, block)
                                     if data is not None:
                                         self.err_data.append(data)
                                         self.condition_data.append(np.array([pe], dtype=np.float32))

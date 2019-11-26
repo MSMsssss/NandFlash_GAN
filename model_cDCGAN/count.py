@@ -13,8 +13,8 @@ from data.connect_database import Connect, SqlConfig
 
 err_data = np.load(cur_path + "/download_data/data_all.npy")
 pe_data = np.load(cur_path + "/download_data/condition_all.npy").squeeze(1)
-# err_data = np.load(root_path + "/model_GAN/gen_data/gen_data_60.npy")
-# pe_data = np.load(root_path + "/model_GAN/gen_data/gen_condition_60.npy").squeeze(1)
+# err_data = np.load(cur_path + "/gen_data/gen_data_60.npy")
+# pe_data = np.load(cur_path + "/gen_data/gen_condition_60.npy").squeeze(1)
 
 
 def norm_ip(img, min, max):
@@ -144,7 +144,7 @@ def count_page_info():
         for j in range(64):
             img[i][j] = color_dict[rtn[i]]
 
-    cv2.imwrite("./pagetype.jpg", img)
+    cv2.imwrite(cur_path + "/count_img/pagetype.jpg", img)
 
 
 # 计算真实数据分布在每一行上的离散程度

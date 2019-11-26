@@ -4,6 +4,8 @@ import numpy as np
 import os
 import sys
 import matplotlib.pyplot as plt
+from model_cDCGAN.main import Generator, Discriminator
 
-import cv2
-print(3 - np.array([1, 2, 3]))
+s = "generator_epoch_100.pth"
+epoch = int(s[s.rfind("_") + 1:s.rfind(".")])
+print(epoch)

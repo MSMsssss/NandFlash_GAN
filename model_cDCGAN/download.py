@@ -5,7 +5,7 @@ root_path = os.path.dirname(cur_path)
 sys.path.append(cur_path)
 sys.path.append(root_path)
 
-from data.dataset import Dataset, SqlConfig
+from model_cDCGAN.dataset import Dataset, SqlConfig
 import torch.utils.data
 import numpy as np
 import torch
@@ -21,8 +21,8 @@ def download_err_data():
     data_loader = torch.utils.data.DataLoader(data_set, batch_size=len(data_set), shuffle=False)
 
     for data, condition in data_loader:
-        np.save(root_path + "/data/download_data/" + opt.err_file_name, data.numpy())
-        np.save(root_path + "/data/download_data/condition.npy" + opt.condition_file_name, condition.numpy())
+        np.save(cur_path + "/download_data/" + opt.err_file_name, data.numpy())
+        np.save(cur_path + "/download_data/condition.npy" + opt.condition_file_name, condition.numpy())
 
     print("下载完成")
 
