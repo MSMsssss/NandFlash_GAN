@@ -49,7 +49,6 @@ def show_gen_data_pe(pe, dset='real'):
 # 统计生成的fake数据的分布，并转换器灰度图
 def count_gen_data():
     pe_set = set(list(pe_data))
-    print(pe_set)
     total_dict = {}
     count_dict = {}
     for pe in pe_set:
@@ -81,7 +80,7 @@ def count_frequency():
     total_dict = {}
     count_dict = {}
     for pe in pe_set:
-        total_dict[int(pe)] = np.zeros((2304, 16), dtype=np.int64)
+        total_dict[int(pe)] = np.zeros((2304,), dtype=np.int64)
         count_dict[int(pe)] = 0
 
     for i in range(err_data.shape[0]):
@@ -90,9 +89,12 @@ def count_frequency():
 
     for pe in total_dict.keys():
         total_dict[pe] = total_dict[pe].astype(np.float64) / count_dict[pe]
-        total_dict[pe] = norm_range(total_dict[pe], (0, 15))
+        total_dict[pe] = norm_range(total_dict[pe])
         total_dict[pe] = (255 - total_dict[pe] * 255).astype(np.uint8)
-        cv2.imwrite(cur_path + "/count_img/real/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), total_dict[pe])
+        img = np.zeros((2304, 32), dtype=np.uint8)
+        for i in range(2304):
+            img[i] = 32 * [total_dict[pe][i]]
+        cv2.imwrite(cur_path + "/count_img/real/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), img)
 
 
 # 统计块错误总数与pe的关系
@@ -121,4 +123,4 @@ def count_total_err_num():
 
 
 if __name__ == "__main__":
-    show_gen_data_pe(0, 'fake')
+    count_gen_data()
