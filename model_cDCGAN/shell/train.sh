@@ -1,4 +1,4 @@
-python ./model_DCGAN/main.py --train \
+python ./model_cDCGAN/main.py --train \
                            --cuda \
                            --ngf 128 \
                            --ndf 32 \
