@@ -22,7 +22,7 @@ parser.add_argument("--train", action="store_true", help="训练模型")
 parser.add_argument("--eval", action="store_true", help="运行模型")
 # train与eval共用参数
 parser.add_argument("--cuda", action="store_true", help="使用GPU")
-parser.add_argument("--latent_dim", type=int, default=10, help="噪声维度")
+parser.add_argument("--latent_dim", type=int, default=20, help="噪声维度")
 # train参数
 parser.add_argument("--lr", type=float, default=0.0002, help="学习速率")
 parser.add_argument("--epochs", type=int, default=100, help="训练轮数")
@@ -56,11 +56,11 @@ class Generator(nn.Module):
             return layers
 
         self.model = nn.Sequential(
-            *block(opt.latent_dim + config.condition_dim, 128, normalize=False),
-            *block(128, 256),
-            *block(256, 512),
-            *block(512, 1024),
-            nn.Linear(1024, config.height),
+            *block(opt.latent_dim + config.condition_dim, 512, normalize=False),
+            *block(512, 2048),
+            *block(2048, 4096),
+            *block(4096, 2048),
+            nn.Linear(2048, config.height),
             nn.Tanh()
         )
 
@@ -75,16 +75,15 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Linear(config.height + config.condition_dim, 512),
+            nn.Linear(config.height + config.condition_dim, 4096),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(512, 512),
+            nn.Linear(4096, 2048),
             nn.Dropout(0.4),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(512, 512),
+            nn.Linear(2048, 1024),
             nn.Dropout(0.4),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(512, 1),
-            nn.Sigmoid()
+            nn.Linear(1024, 1),
         )
 
     def forward(self, err_data, condition):
@@ -105,7 +104,7 @@ optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr, betas=config.b
 optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=opt.lr, betas=config.betas)
 
 # 初始化损失函数
-loss_function = nn.BCELoss()
+loss_function = nn.MSELoss()
 
 
 def load_model(g_model_path, d_model_path):
