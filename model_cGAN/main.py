@@ -118,9 +118,10 @@ def train():
     print("加载数据中...")
     if opt.err_data_name != "":
         real_data_set = Dataset(err_data_path=cur_path + "/download_data/" + opt.err_data_name,
-                                condition_data_path=cur_path + "/download_data/" + opt.condition_data_name)
+                                condition_data_path=cur_path + "/download_data/" + opt.condition_data_name,
+                                normalize=True)
     else:
-        real_data_set = Dataset()
+        real_data_set = Dataset(normalize=True)
     real_data_loader = torch.utils.data.DataLoader(dataset=real_data_set, batch_size=opt.batch_size, shuffle=True)
     print('数据加载完成，块数据:%s条' % len(real_data_set))
 

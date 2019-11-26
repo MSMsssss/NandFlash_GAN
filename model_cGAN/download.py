@@ -17,7 +17,7 @@ opt = parser.parse_args()
 
 
 def download_err_data():
-    data_set = Dataset()
+    data_set = Dataset(normalize=False)
     data_loader = torch.utils.data.DataLoader(data_set, batch_size=len(data_set), shuffle=True)
 
     for data, condition in data_loader:
