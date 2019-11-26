@@ -18,7 +18,7 @@ opt = parser.parse_args()
 
 def download_err_data():
     data_set = Dataset()
-    data_loader = torch.utils.data.DataLoader(data_set, batch_size=len(data_set), shuffle=False)
+    data_loader = torch.utils.data.DataLoader(data_set, batch_size=len(data_set), shuffle=True)
 
     for data, condition in data_loader:
         np.save(cur_path + "/download_data/" + opt.err_file_name, data.numpy())

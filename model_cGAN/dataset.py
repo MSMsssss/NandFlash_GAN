@@ -16,7 +16,7 @@ def block_normalized(err_data, condition, mean=0.5, std=0.5, max_pe=17000):
 
 # 自定义数据集
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, err_data_path="", condition_data_path=""):
+    def __init__(self, err_data_path="", condition_data_path="", normalize=False):
         if err_data_path == "":
             # 建立数据库连接
             self.connect = Connect(SqlConfig.train_set_database)
@@ -29,10 +29,7 @@ class Dataset(torch.utils.data.Dataset):
             self.range = (0, len(self.config))
             # self.range = (0, 1)
             # 读取的pe集合
-            temp = range(500, 17000, 500)
-            self.pe_set = [1]
-            for pe in temp:
-                self.pe_set += list(range(pe-2, pe+3))
+            self.pe_set = [1] + list(range(500, 17000, 500))
 
             print("全部数据集信息：")
             for x in self.config[self.range[0]:self.range[1]]:
@@ -56,8 +53,9 @@ class Dataset(torch.utils.data.Dataset):
             self.err_data = np.load(err_data_path)
             self.condition_data = np.load(condition_data_path)
 
-        for i in range(self.err_data.shape[0]):
-            self.err_data[i], self.condition_data[i] = block_normalized(self.err_data[i], self.condition_data[i])
+        if normalize is True:
+            for i in range(self.err_data.shape[0]):
+                self.err_data[i], self.condition_data[i] = block_normalized(self.err_data[i], self.condition_data[i])
 
     def __len__(self):
         return self.err_data.shape[0]
