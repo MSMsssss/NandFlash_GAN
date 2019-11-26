@@ -1,4 +1,4 @@
-python ./model_cGAN/main.py --eval \
+python ./model_cDCGAN2/main.py --eval \
                            --cuda \
                            --ngf 128 \
                            --ndf 32 \

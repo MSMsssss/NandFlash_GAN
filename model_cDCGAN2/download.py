@@ -5,7 +5,7 @@ root_path = os.path.dirname(cur_path)
 sys.path.append(cur_path)
 sys.path.append(root_path)
 
-from model_cGAN.dataset import Dataset, SqlConfig
+from model_cDCGAN2.dataset import Dataset, SqlConfig
 import torch.utils.data
 import numpy as np
 import torch
