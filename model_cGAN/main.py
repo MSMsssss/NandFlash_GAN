@@ -22,7 +22,7 @@ parser.add_argument("--train", action="store_true", help="训练模型")
 parser.add_argument("--eval", action="store_true", help="运行模型")
 # train与eval共用参数
 parser.add_argument("--cuda", action="store_true", help="使用GPU")
-parser.add_argument("--latent_dim", type=int, default=20, help="噪声维度")
+parser.add_argument("--latent_dim", type=int, default=40, help="噪声维度")
 # train参数
 parser.add_argument("--lr", type=float, default=0.0002, help="学习速率")
 parser.add_argument("--epochs", type=int, default=100, help="训练轮数")

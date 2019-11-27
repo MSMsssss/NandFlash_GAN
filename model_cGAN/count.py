@@ -5,16 +5,22 @@ root_path = os.path.dirname(cur_path)
 sys.path.append(cur_path)
 sys.path.append(root_path)
 
+from utils.utils import mkdir
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import torch
 from data.connect_database import Connect, SqlConfig
 
-# err_data = np.load(cur_path + "/download_data/data_all.npy")
-# pe_data = np.load(cur_path + "/download_data/condition_all.npy").squeeze(1)
-err_data = np.load(cur_path + "/gen_data/gen_data_200.npy")
-pe_data = np.load(cur_path + "/gen_data/gen_condition_200.npy").squeeze(1)
+data_set = "real"
+if data_set == "real":
+    err_data = np.load(cur_path + "/download_data/data_all.npy")
+    pe_data = np.load(cur_path + "/download_data/condition_all.npy").squeeze(1)
+else:
+    z_dim = 100
+    epoch = 500
+    err_data = np.load(cur_path + "/gen_data/z_dim_%s/gen_data_%s.npy" % (z_dim, epoch))
+    pe_data = np.load(cur_path + "/gen_data/z_dim_%s/gen_condition_%s.npy" % (z_dim, epoch)).squeeze(1)
 
 
 def norm_ip(img, min, max):
@@ -59,6 +65,7 @@ def count_gen_data():
         total_dict[int(pe_data[i])] += err_data[i].astype(dtype=np.float64)
         count_dict[int(pe_data[i])] += 1
 
+    mkdir(cur_path + "/count_img/fake/z_dim_%s/epoch_%s/" % (z_dim, epoch))
     for pe in total_dict.keys():
         total_dict[pe] = total_dict[pe] / count_dict[pe]
         total_dict[pe] = norm_range(total_dict[pe])
@@ -66,7 +73,8 @@ def count_gen_data():
         img = np.zeros((2304, 32), dtype=np.uint8)
         for i in range(2304):
             img[i] = 32 * [total_dict[pe][i]]
-        cv2.imwrite(cur_path + "/count_img/fake/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), img)
+        cv2.imwrite(cur_path + "/count_img/fake/z_dim_%s/epoch_%s/pe_%s_num_%s.bmp" %
+                    (z_dim, epoch, pe, count_dict[pe]), img)
 
 
 def count_frequency():
@@ -97,30 +105,46 @@ def count_frequency():
         cv2.imwrite(cur_path + "/count_img/real/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), img)
 
 
-# 统计块错误总数与pe的关系
-def count_total_err_num():
-    pe_set = set(list(pe_data.astype(np.int)))
-    err_num_dict = {}
-    count_dict = {}
-
-    for pe in pe_set:
-        err_num_dict[int(pe)] = 0
-        count_dict[int(pe)] = 0
-
+# 统计块错误总数均值，最大值，最小值，标准差与pe的关系
+def count_block_err_num_info():
+    total_err_data = {}
     for i in range(err_data.shape[0]):
-        err_num_dict[int(pe_data[i])] += err_data[i].sum()
-        count_dict[int(pe_data[i])] += 1
+        if int(pe_data[i]) not in total_err_data:
+            total_err_data[int(pe_data[i])] = []
+        else:
+            total_err_data[int(pe_data[i])].append(err_data[i].sum())
 
-    pe_set = list(pe_set)
-    pe_set.sort()
-    res_set = []
-
+    pe_set = [1] + list(range(500, 17000, 500))
+    std_set = []
+    mean_set = []
+    min_set = []
+    max_set = []
     for pe in pe_set:
-        res_set.append(err_num_dict[pe] / count_dict[pe])
+        total_err_data[pe] = np.array(total_err_data[pe])
+        mean_set.append(total_err_data[pe].mean())
+        min_set.append(total_err_data[pe].min())
+        max_set.append(total_err_data[pe].max())
+        std_set.append(total_err_data[pe].std())
 
-    plt.plot(pe_set, res_set)
+    plt.title("real data")
+    plt.plot(pe_set, mean_set, color='green', label='mean')
+    plt.plot(pe_set, min_set, color='red', label='min')
+    plt.plot(pe_set, max_set, color='blue', label='max')
+    plt.plot(pe_set, std_set, color='skyblue', label='std')
+    plt.legend()
+    plt.xlabel('pe')
+    plt.ylabel('err_num')
     plt.show()
 
 
 if __name__ == "__main__":
-    count_gen_data()
+    test_data = []
+    for i in range(err_data.shape[0]):
+        if pe_data[i] == 16500:
+            test_data.append(err_data[i])
+    test_data = np.array(test_data).astype(np.int32)
+    test_data = test_data // 220
+
+    print(test_data.sum(), test_data.shape[0] * test_data.shape[1],
+          test_data.sum() / (test_data.shape[0] * test_data.shape[1]))
+

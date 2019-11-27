@@ -3,14 +3,18 @@ from data.connect_database import Connect, SqlConfig
 import numpy as np
 import torch
 
+max_pe = 17000
+max_err_num = 200
+
 
 # 对数据进行归一化和正则化
-def block_normalized(err_data, condition, mean=0.5, std=0.5, max_pe=17000):
-    err_data = err_data / err_data.max()
+def block_normalized(err_data, condition, mean=0.5, std=0.5):
+    err_data = err_data / max_err_num
     err_data = (err_data - mean) / std
 
     condition = condition / max_pe
     condition = (condition - mean) / std
+
     return err_data, condition
 
 
