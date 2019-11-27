@@ -143,7 +143,7 @@ if __name__ == "__main__":
         if pe_data[i] == 16500:
             test_data.append(err_data[i])
     test_data = np.array(test_data).astype(np.int32)
-    test_data = test_data // 220
+    test_data = test_data // 200
 
     print(test_data.sum(), test_data.shape[0] * test_data.shape[1],
           test_data.sum() / (test_data.shape[0] * test_data.shape[1]))
