@@ -9,6 +9,7 @@ max_err_num = 200
 
 # 对数据进行归一化和正则化
 def block_normalized(err_data, condition, mean=0.5, std=0.5):
+    err_data = err_data.clip(0, max_err_num)
     err_data = err_data / max_err_num
     err_data = (err_data - mean) / std
 
