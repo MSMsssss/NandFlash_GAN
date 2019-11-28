@@ -11,4 +11,4 @@ command = "python ./model_cGAN/main.py --eval \
                            --generator_data_num 20"
 
 for epoch in range(20, 220, 20):
-    os.system(command % epoch)
+    os.system(command % (epoch, epoch))
