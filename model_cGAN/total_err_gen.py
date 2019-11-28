@@ -31,9 +31,9 @@ parser.add_argument("--save_model_epoch", type=int, default=20, help="设置每�
 parser.add_argument("--err_data_name", default="", help="需保存在./download_data下，为空时从数据库读取")
 parser.add_argument("--condition_data_name", default="", help="需保存在./download_data下，为空时从数据库读取")
 # eval参数
-parser.add_argument("--g_load_model_path", default="generator_epoch_100.pth",
+parser.add_argument("--g_load_model_path", default="",
                     help="生成器模型参数保存文件名，必须放置在同目录的save_model文件夹下，如msm.pth")
-parser.add_argument("--d_load_model_path", default="discriminator_epoch_100.pth",
+parser.add_argument("--d_load_model_path", default="",
                     help="判别器模型参数保存文件名，必须放置在同目录的save_model文件夹下，如msm.pth")
 parser.add_argument("--gen_start_pe", type=int, default=0, help="生成假数据的开始pe")
 parser.add_argument("--gen_end_pe", type=int, default=17000, help="生成假数据的结束pe")
@@ -56,10 +56,11 @@ class Generator(nn.Module):
             return layers
 
         self.model = nn.Sequential(
-            *block(opt.latent_dim + config.condition_dim, 128, normalize=False),
-            *block(128, 256),
+            *block(opt.latent_dim + config.condition_dim, 256, normalize=False),
             *block(256, 512),
-            nn.Linear(512, 1),
+            *block(512, 512),
+            *block(512, 1024),
+            nn.Linear(1024, 1),
             nn.Tanh()
         )
 
@@ -74,15 +75,15 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Linear(1 + config.condition_dim, 128),
+            nn.Linear(1 + config.condition_dim, 256),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(128, 256),
+            nn.Linear(256, 512),
             nn.Dropout(0.4),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(256, 256),
+            nn.Linear(512, 1024),
             nn.Dropout(0.4),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(256, 1),
+            nn.Linear(1024, 1),
         )
 
     def forward(self, err_data, condition):

@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import torch
 from data.connect_database import Connect, SqlConfig
 
-data_set = "None"
+data_set = ""
 if data_set == "real":
     err_data = np.load(cur_path + "/download_data/data_all.npy")
     pe_data = np.load(cur_path + "/download_data/condition_all.npy").squeeze(1)
@@ -138,37 +138,64 @@ def count_block_err_num_info():
     plt.show()
 
 
-if __name__ == "__main__":
-    total_err = np.load(cur_path + "/gen_data/totalerr_gen_data_100.npy")
-    pe_data = np.load(cur_path + "/gen_data/totalerr_gen_condition_100.npy")
-    total_err = (total_err / 2 + 0.5) * 320000
-    err_dict = {}
-    pe_set = list(range(0, 17000, 500))
-    print(total_err)
-
-    for i in range(total_err.shape[0]):
-        if int(pe_data[i]) not in err_dict:
-            err_dict[int(pe_data[i])] = []
-        else:
-            err_dict[int(pe_data[i])].append(total_err[i])
-
-    std_set = []
-    mean_set = []
-    min_set = []
-    max_set = []
-    for pe in pe_set:
-        err_dict[pe] = np.array(err_dict[pe])
-        mean_set.append(err_dict[pe].mean())
-        min_set.append(err_dict[pe].min())
-        max_set.append(err_dict[pe].max())
-        std_set.append(err_dict[pe].std())
+# 统计块错误总数均值，最大值，最小值，标准差与pe的关系
+def show_scatter():
+    x = []
+    y = []
+    for i in range(err_data.shape[0]):
+        x.append(pe_data[i])
+        y.append(err_data[i].sum())
 
     plt.title("real data")
-    plt.plot(pe_set, mean_set, color='green', label='mean')
-    plt.plot(pe_set, min_set, color='red', label='min')
-    plt.plot(pe_set, max_set, color='blue', label='max')
-    plt.plot(pe_set, std_set, color='skyblue', label='std')
-    plt.legend()
     plt.xlabel('pe')
     plt.ylabel('err_num')
+    plt.scatter(x, y)
     plt.show()
+
+
+if __name__ == "__main__":
+    for epoch in range(20, 220, 20):
+        total_err = np.load(cur_path + "/gen_data/totalerr_gen_data_%s.npy" % epoch)
+        pe_data = np.load(cur_path + "/gen_data/totalerr_gen_condition_%s.npy" % epoch).squeeze()
+        print(total_err.shape, pe_data.shape)
+
+        # total_err = (total_err - total_err.min()) / (total_err.max() - total_err.min()) * 320000
+        total_err = (total_err / 2 + 0.5) * 320000
+        err_dict = {}
+        pe_set = list(range(0, 17000, 500))
+        print(total_err)
+
+        for i in range(total_err.shape[0]):
+            if int(pe_data[i]) not in err_dict:
+                err_dict[int(pe_data[i])] = []
+            else:
+                err_dict[int(pe_data[i])].append(total_err[i])
+
+        std_set = []
+        mean_set = []
+        min_set = []
+        max_set = []
+        for pe in pe_set:
+            err_dict[pe] = np.array(err_dict[pe])
+            mean_set.append(err_dict[pe].mean())
+            min_set.append(err_dict[pe].min())
+            max_set.append(err_dict[pe].max())
+            std_set.append(err_dict[pe].std())
+
+        plt.title("real data")
+        plt.plot(pe_set, mean_set, color='green', label='mean')
+        plt.plot(pe_set, min_set, color='red', label='min')
+        plt.plot(pe_set, max_set, color='blue', label='max')
+        plt.plot(pe_set, std_set, color='skyblue', label='std')
+        plt.legend()
+        plt.xlabel('pe')
+        plt.ylabel('err_num')
+        plt.show()
+
+        x = list(total_err)
+        y = list(pe_data)
+        plt.title("real data")
+        plt.xlabel('pe')
+        plt.ylabel('err_num')
+        plt.scatter(x, y)
+        plt.show()
