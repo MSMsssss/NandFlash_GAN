@@ -60,7 +60,7 @@ class Generator(nn.Module):
             *block(256, 512),
             *block(512, 1024),
             *block(1024, 2048),
-            *block(1024, 512),
+            *block(2048, 512),
             nn.Linear(512, 1),
             nn.Tanh()
         )
