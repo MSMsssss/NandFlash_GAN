@@ -9,5 +9,7 @@ class Config:
         self.condition_dim = 1  # 输入条件的维度
         self.betas = (0.5, 0.999)  # 用于计算梯度以及梯度平方的运行平均值的系数
         self.max_pe = 17000
+        self.max_total_err = 320000
+        self.max_page_err = 200
         self.pe_set = [1] + list(range(500, self.max_pe, 500))
         self.model_saved_path = os.path.dirname(os.path.abspath(__file__)) + "/save_model/"

@@ -12,15 +12,16 @@ import matplotlib.pyplot as plt
 import torch
 from data.connect_database import Connect, SqlConfig
 
-data_set = "fake"
+data_set = "None"
 if data_set == "real":
     err_data = np.load(cur_path + "/download_data/data_all.npy")
     pe_data = np.load(cur_path + "/download_data/condition_all.npy").squeeze(1)
-else:
-    z_dim = 20
-    epoch = 100
-    err_data = np.load(cur_path + "/gen_data/z_dim_%s/gen_data_%s.npy" % (z_dim, epoch))
-    pe_data = np.load(cur_path + "/gen_data/z_dim_%s/gen_condition_%s.npy" % (z_dim, epoch)).squeeze(1)
+if data_set == "fake":
+    z_dim = 30
+    epoch = 50
+    mode = "div_setvalue"
+    err_data = np.load(cur_path + "/gen_data/z_dim_%s/%s/gen_data_%s.npy" % (z_dim, mode, epoch))
+    pe_data = np.load(cur_path + "/gen_data/z_dim_%s/%s/gen_condition_%s.npy" % (z_dim, mode, epoch)).squeeze(1)
 
 
 def norm_ip(img, min, max):
@@ -114,7 +115,7 @@ def count_block_err_num_info():
         else:
             total_err_data[int(pe_data[i])].append(err_data[i].sum())
 
-    pe_set = [0] + list(range(500, 17000, 500))
+    pe_set = [1] + list(range(500, 17000, 500))
     std_set = []
     mean_set = []
     min_set = []
@@ -138,9 +139,36 @@ def count_block_err_num_info():
 
 
 if __name__ == "__main__":
-    for i in range(err_data.shape[0]):
-        err_data[i] = norm_range(err_data[i])
+    total_err = np.load(cur_path + "/gen_data/totalerr_gen_data_100.npy")
+    pe_data = np.load(cur_path + "/gen_data/totalerr_gen_condition_100.npy")
+    total_err = (total_err / 2 + 0.5) * 320000
+    err_dict = {}
+    pe_set = list(range(0, 17000, 500))
+    print(total_err)
 
-    err_data = (err_data * 200 + 0.5).astype(np.int32)
-    count_frequency()
-    count_block_err_num_info()
+    for i in range(total_err.shape[0]):
+        if int(pe_data[i]) not in err_dict:
+            err_dict[int(pe_data[i])] = []
+        else:
+            err_dict[int(pe_data[i])].append(total_err[i])
+
+    std_set = []
+    mean_set = []
+    min_set = []
+    max_set = []
+    for pe in pe_set:
+        err_dict[pe] = np.array(err_dict[pe])
+        mean_set.append(err_dict[pe].mean())
+        min_set.append(err_dict[pe].min())
+        max_set.append(err_dict[pe].max())
+        std_set.append(err_dict[pe].std())
+
+    plt.title("real data")
+    plt.plot(pe_set, mean_set, color='green', label='mean')
+    plt.plot(pe_set, min_set, color='red', label='min')
+    plt.plot(pe_set, max_set, color='blue', label='max')
+    plt.plot(pe_set, std_set, color='skyblue', label='std')
+    plt.legend()
+    plt.xlabel('pe')
+    plt.ylabel('err_num')
+    plt.show()
