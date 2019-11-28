@@ -52,14 +52,14 @@ class Generator(nn.Module):
             layers = [nn.Linear(in_feat, out_feat)]
             if normalize:
                 layers.append(nn.BatchNorm1d(out_feat, 0.8))
-            layers.append(nn.LeakyReLU(0.2, inplace=True))
+            layers.append(nn.Tanh())
             return layers
 
         self.model = nn.Sequential(
             *block(opt.latent_dim + config.condition_dim, 256, normalize=False),
             *block(256, 512),
-            *block(512, 64),
-            nn.Linear(64, 1),
+            *block(512, 256),
+            nn.Linear(256, 1),
             nn.Tanh()
         )
 
