@@ -58,9 +58,10 @@ class Generator(nn.Module):
         self.model = nn.Sequential(
             *block(opt.latent_dim + config.condition_dim, 256, normalize=False),
             *block(256, 512),
-            *block(512, 512),
             *block(512, 1024),
-            nn.Linear(1024, 1),
+            *block(1024, 2048),
+            *block(1024, 512),
+            nn.Linear(512, 1),
             nn.Tanh()
         )
 

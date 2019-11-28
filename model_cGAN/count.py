@@ -154,13 +154,13 @@ def show_scatter():
 
 
 if __name__ == "__main__":
-    for epoch in range(20, 220, 20):
+    for epoch in range(50, 400, 50):
         total_err = np.load(cur_path + "/gen_data/totalerr_gen_data_%s.npy" % epoch)
         pe_data = np.load(cur_path + "/gen_data/totalerr_gen_condition_%s.npy" % epoch).squeeze()
         print(total_err.shape, pe_data.shape)
 
-        # total_err = (total_err - total_err.min()) / (total_err.max() - total_err.min()) * 320000
-        total_err = (total_err / 2 + 0.5) * 320000
+        total_err = (total_err - total_err.min()) / (total_err.max() - total_err.min()) * 320000
+        # total_err = (total_err / 2 + 0.5) * 320000
         err_dict = {}
         pe_set = list(range(0, 17000, 500))
         print(total_err)
@@ -192,8 +192,8 @@ if __name__ == "__main__":
         plt.ylabel('err_num')
         plt.show()
 
-        x = list(total_err)
-        y = list(pe_data)
+        x = list(pe_data)
+        y = list(total_err)
         plt.title("real data")
         plt.xlabel('pe')
         plt.ylabel('err_num')
