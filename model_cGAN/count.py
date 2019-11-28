@@ -17,7 +17,7 @@ if data_set == "real":
     err_data = np.load(cur_path + "/download_data/data_all.npy")
     pe_data = np.load(cur_path + "/download_data/condition_all.npy").squeeze(1)
 else:
-    z_dim = 40
+    z_dim = 20
     epoch = 100
     err_data = np.load(cur_path + "/gen_data/z_dim_%s/gen_data_%s.npy" % (z_dim, epoch))
     pe_data = np.load(cur_path + "/gen_data/z_dim_%s/gen_condition_%s.npy" % (z_dim, epoch)).squeeze(1)

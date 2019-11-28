@@ -8,7 +8,7 @@ command = "python ./model_cGAN/main.py --eval \
                            --gen_start_pe 0 \
                            --gen_end_pe 17000 \
                            --gen_interval_pe 500 \
-                           --generator_data_num 20"
+                           --generator_data_num 200"
 
 for epoch in range(20, 220, 20):
     os.system(command % (epoch, epoch))
