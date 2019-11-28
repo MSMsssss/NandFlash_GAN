@@ -12,13 +12,13 @@ import matplotlib.pyplot as plt
 import torch
 from data.connect_database import Connect, SqlConfig
 
-data_set = "real"
+data_set = "fake"
 if data_set == "real":
     err_data = np.load(cur_path + "/download_data/data_all.npy")
     pe_data = np.load(cur_path + "/download_data/condition_all.npy").squeeze(1)
 else:
-    z_dim = 100
-    epoch = 500
+    z_dim = 40
+    epoch = 100
     err_data = np.load(cur_path + "/gen_data/z_dim_%s/gen_data_%s.npy" % (z_dim, epoch))
     pe_data = np.load(cur_path + "/gen_data/z_dim_%s/gen_condition_%s.npy" % (z_dim, epoch)).squeeze(1)
 
@@ -114,7 +114,7 @@ def count_block_err_num_info():
         else:
             total_err_data[int(pe_data[i])].append(err_data[i].sum())
 
-    pe_set = [1] + list(range(500, 17000, 500))
+    pe_set = [0] + list(range(500, 17000, 500))
     std_set = []
     mean_set = []
     min_set = []
@@ -138,13 +138,9 @@ def count_block_err_num_info():
 
 
 if __name__ == "__main__":
-    test_data = []
     for i in range(err_data.shape[0]):
-        if pe_data[i] == 16500:
-            test_data.append(err_data[i])
-    test_data = np.array(test_data).astype(np.int32)
-    test_data = test_data // 200
+        err_data[i] = norm_range(err_data[i])
 
-    print(test_data.sum(), test_data.shape[0] * test_data.shape[1],
-          test_data.sum() / (test_data.shape[0] * test_data.shape[1]))
-
+    err_data = (err_data * 200 + 0.5).astype(np.int32)
+    count_frequency()
+    count_block_err_num_info()

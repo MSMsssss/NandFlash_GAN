@@ -1,3 +1,6 @@
+epoch=20
+while $epoch <= 200
+do
 python ./model_cGAN/main.py --eval \
                            --cuda \
                            --latent_dim 20 \
@@ -6,6 +9,8 @@ python ./model_cGAN/main.py --eval \
                            --gen_start_pe 0 \
                            --gen_end_pe 17000 \
                            --gen_interval_pe 500 \
-                           --generator_data_num 200
+                           --generator_data_num 20
+epoch=$epoch+20
+done
 
 
