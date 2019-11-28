@@ -75,15 +75,15 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Linear(1 + config.condition_dim, 256),
+            nn.Linear(1 + config.condition_dim, 128),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(256, 512),
+            nn.Linear(128, 256),
             nn.Dropout(0.4),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(512, 1024),
+            nn.Linear(256, 256),
             nn.Dropout(0.4),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(1024, 1),
+            nn.Linear(256, 1),
         )
 
     def forward(self, err_data, condition):
