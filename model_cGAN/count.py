@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import torch
 from data.connect_database import Connect, SqlConfig
 
-data_set = ""
+data_set = "real"
 if data_set == "real":
     err_data = np.load(cur_path + "/download_data/data_all.npy")
     pe_data = np.load(cur_path + "/download_data/condition_all.npy").squeeze(1)
@@ -142,9 +142,12 @@ def count_block_err_num_info():
         left = total_err_data[pe].min()
         right = total_err_data[pe].max()
         x = [left + i * (right - left) / d.shape[0] for i in range(d.shape[0])]
-        plt.title("%s" % pe)
+        plt.close()
+        plt.title("pe:%s err_num distribute" % pe)
+        plt.xlabel("err_num")
+        plt.ylabel("num")
         plt.plot(x, list(d))
-        plt.show()
+        plt.savefig(cur_path + "/count_img/real/real/err_num_distribute_%s" % pe)
 
 
 # 统计块错误总数均值，最大值，最小值，标准差与pe的关系
@@ -159,7 +162,7 @@ def show_scatter():
     plt.xlabel('pe')
     plt.ylabel('err_num')
     plt.scatter(x, y)
-    plt.show()
+    plt.savefig(cur_path + "/count_img/real/real/err_num.png")
 
 
 if __name__ == "__main__":
@@ -208,9 +211,4 @@ if __name__ == "__main__":
     #     plt.ylabel('err_num')
     #     plt.scatter(x, y)
     #     plt.show()
-    for epoch in range(20, 220, 20):
-        z_dim = 20
-        mode = "div_max"
-        err_data = np.load(cur_path + "/gen_data/z_dim_%s/%s/gen_data_%s.npy" % (z_dim, mode, epoch))
-        pe_data = np.load(cur_path + "/gen_data/z_dim_%s/%s/gen_condition_%s.npy" % (z_dim, mode, epoch)).squeeze(1)
-        count_gen_data()
+    show_scatter()
