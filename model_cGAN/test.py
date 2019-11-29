@@ -13,7 +13,11 @@ import os
 import sys
 import matplotlib.pyplot as plt
 
-err_data = np.load(cur_path + "/download_data/data_all.npy")
-pe_data = np.load(cur_path + '/download_data/condition_all.npy')
 
-print(err_data.shape, pe_data.shape)
+def f():
+    print(a)
+
+
+if __name__ == "__main__":
+    a = np.random.randn(100)
+    f()

@@ -59,7 +59,7 @@ def count_gen_data():
     for pe in total_dict.keys():
         total_dict[pe] = norm_range(total_dict[pe])
         total_dict[pe] = (255 - total_dict[pe] * 255).astype(np.uint8)
-        cv2.imwrite(cur_path + "/count_img/fake/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), total_dict[pe])
+        cv2.imwrite(cur_path + "/count_img/fake/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), total_dict[pe].reshape((192, 192)))
 
 
 def count_frequency():
@@ -82,9 +82,9 @@ def count_frequency():
 
     for pe in total_dict.keys():
         total_dict[pe] = total_dict[pe].astype(np.float64) / count_dict[pe]
-        total_dict[pe] = norm_range(total_dict[pe], (0, 15))
+        total_dict[pe] = norm_range(total_dict[pe])
         total_dict[pe] = (255 - total_dict[pe] * 255).astype(np.uint8)
-        cv2.imwrite(cur_path + "/count_img/real/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), total_dict[pe])
+        cv2.imwrite(cur_path + "/count_img/real/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), total_dict[pe].reshape((192, 192)))
 
 
 # 统计块错误总数与pe的关系
@@ -166,5 +166,4 @@ def count_row_std(pe):
 
 
 if __name__ == "__main__":
-    for pe in [1] + list(range(500, 16500, 500)):
-        count_row_std(pe)
+    count_frequency()

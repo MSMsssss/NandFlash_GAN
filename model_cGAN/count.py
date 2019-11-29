@@ -17,9 +17,9 @@ if data_set == "real":
     err_data = np.load(cur_path + "/download_data/data_all.npy")
     pe_data = np.load(cur_path + "/download_data/condition_all.npy").squeeze(1)
 if data_set == "fake":
-    z_dim = 30
-    epoch = 50
-    mode = "div_setvalue"
+    z_dim = 20
+    epoch = 20
+    mode = "div_max"
     err_data = np.load(cur_path + "/gen_data/z_dim_%s/%s/gen_data_%s.npy" % (z_dim, mode, epoch))
     pe_data = np.load(cur_path + "/gen_data/z_dim_%s/%s/gen_condition_%s.npy" % (z_dim, mode, epoch)).squeeze(1)
 
@@ -66,16 +66,16 @@ def count_gen_data():
         total_dict[int(pe_data[i])] += err_data[i].astype(dtype=np.float64)
         count_dict[int(pe_data[i])] += 1
 
-    mkdir(cur_path + "/count_img/fake/z_dim_%s/epoch_%s/" % (z_dim, epoch))
+    mkdir(cur_path + "/count_img/fake/z_dim_%s/%s/epoch_%s/" % (z_dim, mode, epoch))
     for pe in total_dict.keys():
         total_dict[pe] = total_dict[pe] / count_dict[pe]
         total_dict[pe] = norm_range(total_dict[pe])
         total_dict[pe] = (255 - total_dict[pe] * 255).astype(np.uint8)
-        img = np.zeros((2304, 32), dtype=np.uint8)
+        img = np.zeros((2304, 16), dtype=np.uint8)
         for i in range(2304):
-            img[i] = 32 * [total_dict[pe][i]]
-        cv2.imwrite(cur_path + "/count_img/fake/z_dim_%s/epoch_%s/pe_%s_num_%s.bmp" %
-                    (z_dim, epoch, pe, count_dict[pe]), img)
+            img[i] = 16 * [total_dict[pe][i]]
+        cv2.imwrite(cur_path + "/count_img/fake/z_dim_%s/%s/epoch_%s/pe_%s_num_%s.bmp" %
+                    (z_dim, mode, epoch, pe, count_dict[pe]), img.reshape((192, 192)))
 
 
 def count_frequency():
@@ -100,10 +100,10 @@ def count_frequency():
         total_dict[pe] = total_dict[pe].astype(np.float64) / count_dict[pe]
         total_dict[pe] = norm_range(total_dict[pe])
         total_dict[pe] = (255 - total_dict[pe] * 255).astype(np.uint8)
-        img = np.zeros((2304, 32), dtype=np.uint8)
+        img = np.zeros((2304, 16), dtype=np.uint8)
         for i in range(2304):
-            img[i] = 32 * [total_dict[pe][i]]
-        cv2.imwrite(cur_path + "/count_img/real/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), img)
+            img[i] = 16 * [total_dict[pe][i]]
+        cv2.imwrite(cur_path + "/count_img/real/pe_%s_num_%s.bmp" % (pe, count_dict[pe]), img.reshape((192, 192)))
 
 
 # 统计块错误总数均值，最大值，最小值，标准差与pe的关系
@@ -137,6 +137,15 @@ def count_block_err_num_info():
     plt.ylabel('err_num')
     plt.show()
 
+    for pe in pe_set:
+        d = torch.histc(torch.from_numpy(total_err_data[pe]), bins=10)
+        left = total_err_data[pe].min()
+        right = total_err_data[pe].max()
+        x = [left + i * (right - left) / d.shape[0] for i in range(d.shape[0])]
+        plt.title("%s" % pe)
+        plt.plot(x, list(d))
+        plt.show()
+
 
 # 统计块错误总数均值，最大值，最小值，标准差与pe的关系
 def show_scatter():
@@ -154,48 +163,54 @@ def show_scatter():
 
 
 if __name__ == "__main__":
-    for epoch in range(50, 400, 50):
-        total_err = np.load(cur_path + "/gen_data/totalerr_gen_data_%s.npy" % epoch)
-        pe_data = np.load(cur_path + "/gen_data/totalerr_gen_condition_%s.npy" % epoch).squeeze()
-        print(total_err.shape, pe_data.shape)
-
-        total_err = (total_err - total_err.min()) / (total_err.max() - total_err.min()) * 320000
-        # total_err = (total_err / 2 + 0.5) * 320000
-        err_dict = {}
-        pe_set = list(range(0, 17000, 500))
-        print(total_err)
-
-        for i in range(total_err.shape[0]):
-            if int(pe_data[i]) not in err_dict:
-                err_dict[int(pe_data[i])] = []
-            else:
-                err_dict[int(pe_data[i])].append(total_err[i])
-
-        std_set = []
-        mean_set = []
-        min_set = []
-        max_set = []
-        for pe in pe_set:
-            err_dict[pe] = np.array(err_dict[pe])
-            mean_set.append(err_dict[pe].mean())
-            min_set.append(err_dict[pe].min())
-            max_set.append(err_dict[pe].max())
-            std_set.append(err_dict[pe].std())
-
-        plt.title("real data")
-        plt.plot(pe_set, mean_set, color='green', label='mean')
-        plt.plot(pe_set, min_set, color='red', label='min')
-        plt.plot(pe_set, max_set, color='blue', label='max')
-        plt.plot(pe_set, std_set, color='skyblue', label='std')
-        plt.legend()
-        plt.xlabel('pe')
-        plt.ylabel('err_num')
-        plt.show()
-
-        x = list(pe_data)
-        y = list(total_err)
-        plt.title("real data")
-        plt.xlabel('pe')
-        plt.ylabel('err_num')
-        plt.scatter(x, y)
-        plt.show()
+    # for epoch in range(50, 400, 50):
+    #     total_err = np.load(cur_path + "/gen_data/totalerr_gen_data_%s.npy" % epoch)
+    #     pe_data = np.load(cur_path + "/gen_data/totalerr_gen_condition_%s.npy" % epoch).squeeze()
+    #     print(total_err.shape, pe_data.shape)
+    #
+    #     total_err = (total_err - total_err.min()) / (total_err.max() - total_err.min()) * 320000
+    #     # total_err = (total_err / 2 + 0.5) * 320000
+    #     err_dict = {}
+    #     pe_set = list(range(0, 17000, 500))
+    #     print(total_err)
+    #
+    #     for i in range(total_err.shape[0]):
+    #         if int(pe_data[i]) not in err_dict:
+    #             err_dict[int(pe_data[i])] = []
+    #         else:
+    #             err_dict[int(pe_data[i])].append(total_err[i])
+    #
+    #     std_set = []
+    #     mean_set = []
+    #     min_set = []
+    #     max_set = []
+    #     for pe in pe_set:
+    #         err_dict[pe] = np.array(err_dict[pe])
+    #         mean_set.append(err_dict[pe].mean())
+    #         min_set.append(err_dict[pe].min())
+    #         max_set.append(err_dict[pe].max())
+    #         std_set.append(err_dict[pe].std())
+    #
+    #     plt.title("real data")
+    #     plt.plot(pe_set, mean_set, color='green', label='mean')
+    #     plt.plot(pe_set, min_set, color='red', label='min')
+    #     plt.plot(pe_set, max_set, color='blue', label='max')
+    #     plt.plot(pe_set, std_set, color='skyblue', label='std')
+    #     plt.legend()
+    #     plt.xlabel('pe')
+    #     plt.ylabel('err_num')
+    #     plt.show()
+    #
+    #     x = list(pe_data)
+    #     y = list(total_err)
+    #     plt.title("real data")
+    #     plt.xlabel('pe')
+    #     plt.ylabel('err_num')
+    #     plt.scatter(x, y)
+    #     plt.show()
+    for epoch in range(20, 220, 20):
+        z_dim = 20
+        mode = "div_max"
+        err_data = np.load(cur_path + "/gen_data/z_dim_%s/%s/gen_data_%s.npy" % (z_dim, mode, epoch))
+        pe_data = np.load(cur_path + "/gen_data/z_dim_%s/%s/gen_condition_%s.npy" % (z_dim, mode, epoch)).squeeze(1)
+        count_gen_data()
