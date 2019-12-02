@@ -60,7 +60,7 @@ class Generator(nn.Module):
             *block(256, 512),
             *block(512, 1024),
             *block(1024, 2048),
-            nn.Linear(2048, 1),
+            nn.Linear(2048, config.g_output_dim),
             nn.Tanh()
         )
 
@@ -75,7 +75,7 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Linear(1 + config.condition_dim, 128),
+            nn.Linear(config.g_output_dim + config.condition_dim, 128),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(128, 256),
             nn.Dropout(0.4),

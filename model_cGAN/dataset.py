@@ -71,6 +71,8 @@ class Dataset(torch.utils.data.Dataset):
 # 自定义数据集
 class TotalErrDataset(torch.utils.data.Dataset):
     def __init__(self, err_data_path="", condition_data_path="", normalize=False):
+        # 读取的pe集合
+        self.pe_set = [1] + list(range(500, 17000, 500))
         if err_data_path == "":
             # 建立数据库连接
             self.connect = Connect(SqlConfig.train_set_database)
@@ -82,8 +84,6 @@ class TotalErrDataset(torch.utils.data.Dataset):
             # 选择要读取的group:range[0]~range[1]范围
             self.range = (0, len(self.config))
             # self.range = (0, 1)
-            # 读取的pe集合
-            self.pe_set = [1] + list(range(500, 17000, 500))
 
             print("全部数据集信息：")
             for x in self.config[self.range[0]:self.range[1]]:
@@ -115,8 +115,21 @@ class TotalErrDataset(torch.utils.data.Dataset):
                 self.err_data[i] = (self.err_data[i] / config.max_total_err - 0.5) / 0.5
         print(self.err_data.shape)
 
+        self.data_dict = {}
+        for pe in self.pe_set:
+            self.data_dict[pe] = []
+        for i in range(self.err_data.shape[0]):
+            self.data_dict[self.condition_data[i][0]].append(self.err_data[i][0])
+
     def __len__(self):
-        return self.err_data.shape[0]
+        return 10000
 
     def __getitem__(self, index):
-        return self.err_data[index], self.condition_data[index]
+        pe = self.pe_set[index % len(self.pe_set)]
+        index_set = np.random.randint(low=0, high=len(self.data_dict[pe]), size=(config.g_output_dim, ))
+        rtn_set = []
+        for i in index_set:
+            rtn_set.append(self.data_dict[pe][i])
+        rtn_set = np.array(rtn_set, dtype=np.float32)
+
+        return rtn_set, np.array([pe], dtype=np.float32)

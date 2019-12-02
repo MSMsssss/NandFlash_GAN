@@ -4,13 +4,13 @@ import torch
 
 
 class SqlConfig(object):
-    train_set_database = "nandflash"
-    generator_database = "NandFlash_GAN"
+    train_set_database = "nandflash_gan"
+    generator_database = "nandflash_gan"
 
     def __init__(self, database):
-        self.host = '10.147.20.88'  # 主机地址
+        self.host = '127.0.0.1'  # 主机地址
         self.user = 'root'  # 用户名
-        self.password = 'nvmgroup'  # 密码
+        self.password = '1998msm322'  # 密码
         self.db = database  # 数据库名称
         self.charset = 'utf8mb4'  # 字符集
         self.cursorclass = pymysql.cursors.DictCursor  # 游标类型
