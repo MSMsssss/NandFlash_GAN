@@ -56,11 +56,11 @@ class Generator(nn.Module):
             return layers
 
         self.model = nn.Sequential(
-            *block(opt.latent_dim + config.condition_dim, 256, normalize=False),
-            *block(256, 512),
-            *block(512, 1024),
-            *block(1024, 2048),
-            nn.Linear(2048, config.g_output_dim),
+            *block(opt.latent_dim + config.condition_dim, 128, normalize=False),
+            *block(128, 512),
+            *block(512, 2048),
+            *block(2048, 512),
+            nn.Linear(512, config.g_output_dim),
             nn.Tanh()
         )
 
@@ -75,15 +75,15 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Linear(config.g_output_dim + config.condition_dim, 128),
+            nn.Linear(config.g_output_dim + config.condition_dim, 2048),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(128, 256),
+            nn.Linear(2048, 1024),
             nn.Dropout(0.4),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(256, 256),
+            nn.Linear(1024, 512),
             nn.Dropout(0.4),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(256, 1),
+            nn.Linear(512, 1),
         )
 
     def forward(self, err_data, condition):

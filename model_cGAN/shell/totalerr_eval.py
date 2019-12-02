@@ -2,7 +2,7 @@ import os
 
 command = "python ./model_cGAN/total_err_gen.py --eval \
                            --cuda \
-                           --latent_dim 5 \
+                           --latent_dim 10 \
                            --g_load_model_path totalerr_generator_epoch_%s.pth \
                            --d_load_model_path totalerr_discriminator_epoch_%s.pth \
                            --gen_start_pe 0 \
