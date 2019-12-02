@@ -2,7 +2,9 @@
 import pymysql
 import datetime
 import sys
-data_path = "e:/nandflash_data/2019_8_1/"
+import os
+
+data_root_path = "e:/nandflash_data/"
 
 
 def read_file(file_path, chip, db, testID, start_lines, exit_lines):
@@ -21,8 +23,6 @@ def read_file(file_path, chip, db, testID, start_lines, exit_lines):
         read_recordID = 0
 
         while line:
-            if i % 5000 == 0:
-                print(i)
             # if i==exit_lines:
             # sys.exit(0)
 
@@ -43,7 +43,7 @@ def read_file(file_path, chip, db, testID, start_lines, exit_lines):
                 从blockstatus数据表中提取pe和health值，health值判断block有没有坏，pe作为该block下read的pe次数，
                 并且计算blockbe表中block_err:取2304个16K页中err最高的前115个err的平均值
                 '''
-                if line == "[Group PEcnt CE LUN Block Page  Type  ][ tR ][page_err][F[0]   F[1]   F[2]   F[3]   F[4] "\
+                if line == "[Group PEcnt CE LUN Block Page  Type  ][ tR ][page_err][F[0]   F[1]   F[2]   F[3]   F[4] " \
                            " F[5]   F[6]   F[7]   F[8]   F[9]   F[a]   F[b]   F[c]   F[d]   F[e]   F[f]   ]\n":
                     block_err = []
                     k = 0
@@ -69,10 +69,6 @@ def read_file(file_path, chip, db, testID, start_lines, exit_lines):
 
                     k += 1
 
-                    '''
-                    [Group PEcnt CE LUN Block Page  Type  ][ tR ][page_err][F[0]   F[1]   F[2]   F[3]   F[4]   F[5]   F[6]   F[7]   F[8]   F[9]   F[a]   F[b]   F[c]   F[d]   F[e]   F[f]   ]
-                    [20000     1 C0 L0  B20   P0    SLC   ][  79][       0][0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      ]
-                    '''
                     read_record.append(read_recordID)  # recordID        read_record[0]
                     read_record.append(testID)  # testID=1        read_record[1]
                     read_record.append(int(x1[1]))  # pe              read_record[2]
@@ -118,9 +114,6 @@ def read_file(file_path, chip, db, testID, start_lines, exit_lines):
                     cursor = db.cursor()
                     try:
                         pass
-                        #cursor.execute(sql)
-                        #results = cursor.fetchall()
-                        # print("results:",results)
                     except Exception as e:
                         db.rollback()  # 发生错误时回滚
                         print(e)
@@ -162,23 +155,64 @@ def read_file(file_path, chip, db, testID, start_lines, exit_lines):
             i += 1
 
 
-if __name__ == "__main__":
-    '''连接数据库'''
-    db = pymysql.connect(host='127.0.0.1', port=3306,
-                         user='root', passwd='1998msm322', db='nandflash_gan', charset='utf8')
-    chip = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    testID = 5
+def import_config(connect, testID):
+    description = "cycling, pe[0,20000,100]"
+
+    sql = """insert into testgroup(groupID, testID, chip, ce, die, block, description)
+    values(%s, %s, %s, %s, %s, %s, %s);
+    """
+    groupID = 1
+
+    file_list = os.listdir(data_root_path)
+    for file in file_list:
+        if os.path.isdir(data_root_path + file):
+            cur_path = data_root_path + file + "/"
+
+            with open(cur_path + "000.log") as f:
+                config_dict = {}
+                for i, line in enumerate(f):
+                    if line == "start\n":
+                        break
+                    if i == 5:
+                        config_dict["block"] = line[line.find(":") + 1:-1]
+
+                with connect.cursor() as cursor:
+                    cursor.execute(sql, (groupID, testID, "0-15", "0,1,2,3", "0", config_dict["block"], description))
+                connect.commit()
+
+            groupID += 1
+
+    print("config import done!")
+
+
+def import_data(connect, testID):
+    chips = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
     # start_line为下一次读取文件开始的行数，即该行还没有读取进数据库
     start_lines = 0
     # exit_line为下一次读取文件结束的行数（该行还没有读取进数据库）
     exit_lines = 40000000
 
-    for item in chip:
-        '''插入数据'''
-        file_path = str(item).zfill(3) + ".log"
-        chip = item
-        read_file(data_path + file_path, chip, db, testID, start_lines, exit_lines)
+    file_list = os.listdir(data_root_path)
+    for file in file_list:
+        if os.path.isdir(data_root_path + file):
+            cur_path = data_root_path + file + "/"
+            for item in chips:
+                '''插入数据'''
+                file_path = str(item).zfill(3) + ".log"
+                read_file(cur_path + file_path, item, connect, testID, start_lines, exit_lines)
+                print("date: %s, chip %s import success" % (file, item))
 
-    '''关闭连接'''
-    db.close()
+            print("date: %s log import success" % file)
+
+
+def run():
+    connect = pymysql.connect(host='127.0.0.1', port=3306,
+                              user='root', passwd='1998msm322', db='nandflash_gan', charset='utf8mb4')
+    testID = 1
+    import_data(connect, testID)
+    connect.close()
+
+
+if __name__ == "__main__":
+    run()

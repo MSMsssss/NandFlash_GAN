@@ -15,7 +15,11 @@ import matplotlib.pyplot as plt
 
 
 if __name__ == "__main__":
-    data_path = "e:/nandflash_data/2019_8_1/"
-    with open(data_path + "000.log") as f:
-        for line in f:
-            print(line)
+    data_path = "e:/nandflash_data/2019_8_9/"
+    l = []
+    with open(data_path + "002.log") as f:
+        for i, line in enumerate(f):
+            if i > 10:
+                break
+            l.append(line)
+            print(l)
