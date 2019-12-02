@@ -56,11 +56,11 @@ class Generator(nn.Module):
             return layers
 
         self.model = nn.Sequential(
-            *block(opt.latent_dim + config.condition_dim, 128, normalize=False),
-            *block(128, 512),
-            *block(512, 2048),
-            *block(2048, 512),
-            nn.Linear(512, config.g_output_dim),
+            *block(opt.latent_dim + config.condition_dim, 256, normalize=False),
+            *block(256, 1024),
+            *block(1024, 2048),
+            *block(2048, 2048),
+            nn.Linear(2048, config.g_output_dim),
             nn.Tanh()
         )
 
@@ -140,7 +140,6 @@ def train():
             # 真实数据
             real_err_data = err_data.to(device)
             real_condition = condition.to(device)
-            print(real_err_data.shape, real_condition.shape)
 
             # ---------------------
             #  训练分类器
