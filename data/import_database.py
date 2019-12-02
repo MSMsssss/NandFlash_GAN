@@ -117,15 +117,16 @@ def read_file(file_path, chip, db, testID, start_lines, exit_lines):
                     sql = "SELECT pe,health FROM blockstatus WHERE blockID = '%s'" % (blockID)
                     cursor = db.cursor()
                     try:
-                        cursor.execute(sql)
-                        results = cursor.fetchall()
+                        pass
+                        #cursor.execute(sql)
+                        #results = cursor.fetchall()
                         # print("results:",results)
                     except Exception as e:
                         db.rollback()  # 发生错误时回滚
                         print(e)
                     cursor.close()
 
-                    if results[0][1] == 0:
+                    if 1:
                         '''
                         print("tread:", read_record[0], read_record[1], read_record[2], read_record[3], read_record[4],
                               read_record[5], read_record[6], read_record[7], read_record[8], read_record[9],
@@ -142,7 +143,7 @@ def read_file(file_path, chip, db, testID, start_lines, exit_lines):
 
                         try:
                             cursor.execute(sql, (
-                                read_record[1], results[0][0], read_record[3], read_record[4], read_record[5],
+                                read_record[1], read_record[2], read_record[3], read_record[4], read_record[5],
                                 read_record[6],
                                 read_record[7], read_record[8], read_record[9], read_record[10], read_record[11],
                                 read_record[12],

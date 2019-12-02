@@ -14,10 +14,8 @@ import sys
 import matplotlib.pyplot as plt
 
 
-def f():
-    print(a)
-
-
 if __name__ == "__main__":
-    a = np.random.randn(100)
-    f()
+    data_path = "e:/nandflash_data/2019_8_1/"
+    with open(data_path + "000.log") as f:
+        for line in f:
+            print(line)
