@@ -3,6 +3,7 @@ from data.connect_database import Connect, SqlConfig
 from model_cGAN.config import Config
 import numpy as np
 import torch
+import random
 
 config = Config()
 
@@ -126,7 +127,7 @@ class TotalErrDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         pe = self.pe_set[index % len(self.pe_set)]
-        index_set = np.random.randint(low=0, high=len(self.data_dict[pe]), size=(config.g_output_dim, ))
+        index_set = random.sample(range(0, len(self.data_dict[pe])), config.g_output_dim)
         rtn_set = []
         for i in index_set:
             rtn_set.append(self.data_dict[pe][i])

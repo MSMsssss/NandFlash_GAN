@@ -140,6 +140,7 @@ def train():
             # 真实数据
             real_err_data = err_data.to(device)
             real_condition = condition.to(device)
+            print(real_err_data.shape, real_condition.shape)
 
             # ---------------------
             #  训练分类器
