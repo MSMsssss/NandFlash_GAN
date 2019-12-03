@@ -62,7 +62,6 @@ class Generator(nn.Module):
             *block(2048, 4096),
             *block(4096, 2048),
             nn.Linear(2048, config.g_output_dim),
-            nn.Tanh()
         )
 
     def forward(self, noise, condition):
@@ -135,7 +134,10 @@ def train():
     real_label = 1
     fake_label = 0
 
-    condition_set = [((x / config.max_pe) - 0.5) / 0.5 for x in config.pe_set]
+    if opt.test:
+        condition_set = [0.001, 0.01, 0.1, 1, 10]
+    else:
+        condition_set = [((x / config.max_pe) - 0.5) / 0.5 for x in config.pe_set]
 
     for epoch in range(opt.epochs):
         for i, (err_data, condition) in enumerate(real_data_loader):
