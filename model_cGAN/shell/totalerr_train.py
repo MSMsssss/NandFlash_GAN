@@ -1,7 +1,7 @@
 import os
 command = "python ./model_cGAN/total_err_gen.py --train \
                            --cuda \
-                           --latent_dim 10 \
+                           --latent_dim 20 \
                            --epochs 100 \
                            --batch_size 64 \
                            --err_data_name data.npy \
