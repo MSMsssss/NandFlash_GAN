@@ -1,5 +1,6 @@
 import os
 command = "python ./model_cGAN/total_err_gen.py --train \
+                           --test \
                            --cuda \
                            --latent_dim 20 \
                            --epochs 100 \
