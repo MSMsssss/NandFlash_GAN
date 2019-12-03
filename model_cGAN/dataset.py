@@ -143,7 +143,7 @@ class TestDataSet(torch.utils.data.Dataset):
 
         std_set = [0.001, 0.01, 0.1, 1, 10]
         for std in std_set:
-            for i in range(1000):
+            for i in range(5000):
                 self.data_set.append(std * (np.random.randn(2000).astype(dtype=np.float32)))
                 self.condition_set.append(np.array([std], dtype=np.float32))
 
