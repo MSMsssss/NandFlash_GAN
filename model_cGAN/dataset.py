@@ -134,3 +134,24 @@ class TotalErrDataset(torch.utils.data.Dataset):
         rtn_set = np.array(rtn_set, dtype=np.float32)
 
         return rtn_set, np.array([pe], dtype=np.float32)
+
+
+class TestDataSet(torch.utils.data.Dataset):
+    def __init__(self):
+        self.data_set = []
+        self.condition_set = []
+
+        std_set = [0.001, 0.01, 0.1, 1, 10]
+        for std in std_set:
+            for i in range(1000):
+                self.data_set.append(std * np.random.randn((2000, )))
+                self.condition_set.append(np.array([std]))
+
+        self.data_set = np.array(self.data_set)
+        self.condition_set = np.array(self.condition_set)
+
+    def __len__(self):
+        return self.data_set.shape[0]
+
+    def __getitem__(self, index):
+        return self.data_set[index], self.condition_set[index]

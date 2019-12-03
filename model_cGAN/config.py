@@ -13,4 +13,4 @@ class Config:
         self.max_page_err = 200
         self.pe_set = [1] + list(range(500, self.max_pe, 500))
         self.model_saved_path = os.path.dirname(os.path.abspath(__file__)) + "/save_model/"
-        self.g_output_dim = 100  # total_err_num 生成器输出维度
+        self.g_output_dim = 2000  # total_err_num 生成器输出维度

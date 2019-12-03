@@ -13,7 +13,7 @@ import torch.functional as F
 import numpy as np
 import torch.utils.data
 from model_cGAN.config import Config
-from model_cGAN.dataset import TotalErrDataset
+from model_cGAN.dataset import TotalErrDataset, TestDataSet
 from data.connect_database import Connect, SqlConfig
 
 config = Config()
@@ -30,6 +30,7 @@ parser.add_argument("--batch_size", type=int, default=64, help="batch尺寸")
 parser.add_argument("--save_model_epoch", type=int, default=20, help="设置每隔多少轮保存一次模型")
 parser.add_argument("--err_data_name", default="", help="需保存在./download_data下，为空时从数据库读取")
 parser.add_argument("--condition_data_name", default="", help="需保存在./download_data下，为空时从数据库读取")
+parser.add_argument("--test", action="store_true", help="使用测试模式数据集")
 # eval参数
 parser.add_argument("--g_load_model_path", default="",
                     help="生成器模型参数保存文件名，必须放置在同目录的save_model文件夹下，如msm.pth")
@@ -56,10 +57,10 @@ class Generator(nn.Module):
             return layers
 
         self.model = nn.Sequential(
-            *block(opt.latent_dim + config.condition_dim, 256, normalize=False),
-            *block(256, 1024),
-            *block(1024, 2048),
-            *block(2048, 2048),
+            *block(opt.latent_dim + config.condition_dim, 512, normalize=False),
+            *block(512, 2048),
+            *block(2048, 4096),
+            *block(4096, 2048),
             nn.Linear(2048, config.g_output_dim),
             nn.Tanh()
         )
@@ -75,15 +76,15 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Linear(config.g_output_dim + config.condition_dim, 2048),
+            nn.Linear(config.g_output_dim + config.condition_dim, 4096),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(4096, 2048),
+            nn.Dropout(0.4),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(2048, 1024),
             nn.Dropout(0.4),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(1024, 512),
-            nn.Dropout(0.4),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(512, 1),
+            nn.Linear(1024, 1),
         )
 
     def forward(self, err_data, condition):
@@ -116,12 +117,15 @@ def load_model(g_model_path, d_model_path):
 def train():
     # 初始化数据集
     print("加载数据中...")
-    if opt.err_data_name != "":
-        real_data_set = TotalErrDataset(err_data_path=cur_path + "/download_data/" + opt.err_data_name,
-                                        condition_data_path=cur_path + "/download_data/" + opt.condition_data_name,
-                                        normalize=True)
+    if opt.test:
+        real_data_set = TestDataSet()
     else:
-        real_data_set = TotalErrDataset(normalize=True)
+        if opt.err_data_name != "":
+            real_data_set = TotalErrDataset(err_data_path=cur_path + "/download_data/" + opt.err_data_name,
+                                            condition_data_path=cur_path + "/download_data/" + opt.condition_data_name,
+                                            normalize=True)
+        else:
+            real_data_set = TotalErrDataset(normalize=True)
     real_data_loader = torch.utils.data.DataLoader(dataset=real_data_set, batch_size=opt.batch_size, shuffle=True)
     print('数据加载完成，块数据:%s条' % len(real_data_set))
 
