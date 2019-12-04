@@ -16,5 +16,7 @@ from model_cGAN.config import Config
 from model_cGAN.dataset import TotalErrDataset, TestDataSet
 from data.connect_database import Connect, SqlConfig
 
-a = (0, 1, 2, 3, 4, 5)
-print(a[-2:])
+with open('e:/nandflash_data/2019_8_1/000.log', "r") as f:
+    rtn = f.readlines()
+
+

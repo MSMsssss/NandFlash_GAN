@@ -68,7 +68,7 @@ def handle_block(info_list, connect, action):
 
 # 对一个log文件进行处理
 def handle_file(file_path, chip, connect, testID, action, pe_interval):
-    with open(file_path) as f:
+    with open(file_path, "r") as f:
         text_content = f.readlines()
         print("%s log文件加载完毕" % file_path)
 
@@ -142,9 +142,9 @@ def import_config(connect, testID):
     file_list = os.listdir(data_root_path)
     for file in file_list:
         if os.path.isdir(data_root_path + file):
-            cur_path = data_root_path + file + "/"
+            data_cur_path = data_root_path + file + "/"
 
-            with open(cur_path + "000.log") as f:
+            with open(data_cur_path + "000.log") as f:
                 config_dict = {}
                 for i, line in enumerate(f):
                     if line == "start\n":
@@ -167,10 +167,20 @@ def import_data(connect, testID, action=import_datebase, pe_interval=1000):
 
     if action == import_local:
         mkdir(data_root_path + "data_npy")
+        if not os.path.exists(data_root_path + "data_npy/import.log"):
+            with open(data_root_path + "data_npy/import.log", "w"):
+                print("create import.log")
+
+        with open(data_root_path + "data_npy/import.log", "r") as f:
+            imported_list = set(f.read().split("\n"))
+
+        for file in imported_list:
+            if file != "":
+                print("%s has been imported" % file)
 
     file_list = os.listdir(data_root_path)
     for file in file_list:
-        if os.path.isdir(data_root_path + file):
+        if os.path.isdir(data_root_path + file) and file not in imported_list:
             data_cur_path = data_root_path + file + "/"
             for chip in chip_list:
                 '''插入数据'''
@@ -180,7 +190,7 @@ def import_data(connect, testID, action=import_datebase, pe_interval=1000):
                     f.write("date: %s, chip: %s import success\n" % (file, chip))
                     f.write("%s blocks have been imported now\n" % total_block)
 
-            with open("./import.out", "a") as f:
+            with open(data_root_path + "import.out", "a") as f:
                 f.write("date: %s all chips import success\n" % file)
 
             if action == import_local:
@@ -198,12 +208,11 @@ def import_data(connect, testID, action=import_datebase, pe_interval=1000):
                     f.write("%s\n" % file)
 
 
-
 def run():
     connect = pymysql.connect(host='127.0.0.1', port=3306,
                               user='root', passwd='1998msm322', db='nandflash_gan', charset='utf8mb4')
     testID = 1
-    import_data(connect, testID, action=import_local, pe_interval=1000)
+    import_data(connect, testID, action=import_local, pe_interval=100)
     connect.close()
 
 
