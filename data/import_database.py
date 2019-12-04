@@ -1,5 +1,6 @@
 import os
 import sys
+
 cur_path = os.path.dirname(os.path.abspath(__file__))
 root_path = os.path.dirname(cur_path)
 sys.path.append(root_path)
@@ -9,9 +10,13 @@ import pymysql
 import numpy as np
 from utils.utils import mkdir
 
-data_root_path = "e:/nandflash_data/"
-import_datebase = 0
-import_local = 1
+data_root_path = "e:/nandflash_data/"  # 数据文件根目录
+log_file_path = data_root_path + "log_file/"  # 原始log文件目录
+local_data_path = data_root_path + "data_npy/"  # 保存在本地的npy文件目录
+
+import_datebase = 0  # 导入数据库
+import_local = 1  # 保存为npy文件至本地
+
 sql = "INSERT INTO tread(testID, pe, rt, rd, chip, ce, die, block, page, pagetype, tread, err, f0, f1, f2, " \
       "f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, recordtime) VALUES (%s, %s, %s, %s, %s, %s, %s, " \
       "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now()) "
@@ -27,9 +32,6 @@ pe_data_list = []  # 存储pe值
 
 # 对log文件中的一个page行进行处理，返回提取到的信息
 def handle_line(line):
-    if total_block == 305:
-        print("N")
-
     temp = line[1:-2].split("][")
     for i in range(len(temp)):
         temp[i] = temp[i].split(" ")
@@ -44,7 +46,7 @@ def handle_line(line):
         "page": temp[0][5][1:],
         "page_type": temp[0][6],
         "tread": temp[1][0],
-        "page_err": temp[2][0],
+        "page_err": temp[2],
         "f0-15": temp[3]
     }
     return rtn_dict
@@ -81,8 +83,11 @@ def handle_file(file_path, chip, connect, testID, action, pe_interval):
                 line_num += 2
 
                 # 对给定的pe间隔进行导入
-                pe = int(handle_line(text_content[line_num])["pe"])
-                if pe % pe_interval == 0 or pe == 1:
+                temp_dict = handle_line(text_content[line_num])
+                pe = int(temp_dict["pe"])
+                page_err = temp_dict["page_err"]
+
+                if len(page_err) != 0 and (pe % pe_interval == 0 or pe == 1):
                     block_info_list = []
 
                     while text_content[line_num] != "end\n":
@@ -100,7 +105,7 @@ def handle_file(file_path, chip, connect, testID, action, pe_interval):
                                 int(info_dict["page"]),  # 8
                                 info_dict["page_type"],  # 9
                                 int(info_dict["tread"]),  # 10
-                                int(info_dict["page_err"]),  # 11
+                                int(info_dict["page_err"][0]),  # 11
                                 int(info_dict["f0-15"][0]),
                                 int(info_dict["f0-15"][1]),
                                 int(info_dict["f0-15"][2]),
@@ -122,10 +127,11 @@ def handle_file(file_path, chip, connect, testID, action, pe_interval):
 
                         line_num += 1
 
-                    handle_block(block_info_list, connect, action)
-                    global total_block
-                    total_block += 1
-                    print("%s blocks are imported" % total_block)
+                    if len(block_info_list) == 2304:
+                        handle_block(block_info_list, connect, action)
+                        global total_block
+                        total_block += 1
+                        print("%s blocks are imported" % total_block)
                 else:
                     while text_content[line_num] != "end\n":
                         line_num += 1
@@ -135,93 +141,104 @@ def handle_file(file_path, chip, connect, testID, action, pe_interval):
 
 # 导入配置文件
 def import_config(connect, testID):
-    description = "cycling, pe[0,20000,100]"
+    description = "cycling, pe[0,20000,1000]"
 
     sql = """insert into testgroup(groupID, testID, chip, ce, die, block, description)
     values(%s, %s, %s, %s, %s, %s, %s);
     """
     groupID = 1
 
-    file_list = os.listdir(data_root_path)
+    file_list = os.listdir(log_file_path)
     for file in file_list:
-        if os.path.isdir(data_root_path + file):
-            data_cur_path = data_root_path + file + "/"
+        data_cur_path = log_file_path + file + "/"
 
-            with open(data_cur_path + "000.log") as f:
-                config_dict = {}
-                for i, line in enumerate(f):
-                    if line == "start\n":
-                        break
-                    if i == 5:
-                        config_dict["block"] = line[line.find(":") + 1:-1]
+        with open(data_cur_path + "000.log") as f:
+            config_dict = {}
+            for i, line in enumerate(f):
+                if line == "start\n":
+                    break
+                if i == 5:
+                    config_dict["block"] = line[line.find(":") + 1:-1]
 
-                with connect.cursor() as cursor:
-                    cursor.execute(sql, (groupID, testID, "0-15", "0,1,2,3", "0", config_dict["block"], description))
-                connect.commit()
+            with connect.cursor() as cursor:
+                cursor.execute(
+                    sql, (groupID, testID, "0-15", "0,1,2,3", "0", config_dict["block"], file + "    " + description))
+            connect.commit()
 
-            groupID += 1
+        groupID += 1
 
     print("config import done!")
 
 
 # 导入数据文件
-def import_data(connect, testID, action=import_datebase, pe_interval=1000):
+def import_data(connect, testID, action=import_datebase, pe_interval=1000, given_file_list=None):
     chip_list = list(range(16))
 
-    if action == import_local:
-        mkdir(data_root_path + "data_npy")
-        if not os.path.exists(data_root_path + "data_npy/import.log"):
-            with open(data_root_path + "data_npy/import.log", "w"):
+    if given_file_list is None:
+        file_list = set(os.listdir(log_file_path))
+        if not os.path.exists(data_root_path + "import.log"):
+            with open(data_root_path + "import.log", "w"):
                 print("create import.log")
 
-        with open(data_root_path + "data_npy/import.log", "r") as f:
+        with open(data_root_path + "import.log", "r") as f:
             imported_list = set(f.read().split("\n"))
+            imported_list.remove("")
 
         for file in imported_list:
-            if file != "":
-                print("%s has been imported" % file)
+            print("%s has been imported" % file)
 
-    file_list = os.listdir(data_root_path)
+        file_list = file_list - imported_list
+
+        if action == import_local:
+            mkdir(local_data_path)
+    else:
+        file_list = given_file_list
+
     for file in file_list:
-        if os.path.isdir(data_root_path + file) and file not in imported_list:
-            data_cur_path = data_root_path + file + "/"
-            for chip in chip_list:
-                '''插入数据'''
-                file_name = str(chip).zfill(3) + ".log"
-                handle_file(data_cur_path + file_name, chip, connect, testID, action, pe_interval)
-                with open(data_root_path + "import.out", "a") as f:
-                    f.write("date: %s, chip: %s import success, %s blocks have been imported now\n" %
-                            (file, chip, total_block))
+        data_cur_path = log_file_path + file + "/"
+        for chip in chip_list:
+            '''插入数据'''
+            file_name = str(chip).zfill(3) + ".log"
+            handle_file(data_cur_path + file_name, chip, connect, testID, action, pe_interval)
 
             with open(data_root_path + "import.out", "a") as f:
-                f.write("date: %s all chips import success\n" % file)
+                f.write("date: %s, chip: %s import success, %s blocks have been imported now\n" %
+                        (file, chip, total_block))
 
-            if action == import_local:
-                global block_err_data_list, page_err_data_list, pe_data_list
-                np.save(data_root_path + "data_npy/" + "block_err_data_%s.npy" % file,
-                        np.array(block_err_data_list, dtype=np.int32))
+        with open(data_root_path + "import.out", "a") as f:
+            f.write("date: %s all chips import success\n" % file)
 
-                np.save(data_root_path + "data_npy/" + "page_err_data_%s.npy" % file,
-                        np.array(page_err_data_list, dtype=np.int32))
+        if action == import_local:
+            global block_err_data_list, page_err_data_list, pe_data_list
+            np.save(local_data_path + "block_err_data_%s.npy" % file,
+                    np.array(block_err_data_list, dtype=np.int32))
 
-                np.save(data_root_path + "data_npy/" + "pe_data_%s.npy" % file,
-                        np.array(pe_data_list, dtype=np.int32))
+            np.save(local_data_path + "page_err_data_%s.npy" % file,
+                    np.array(page_err_data_list, dtype=np.int32))
 
-                with open(data_root_path + "data_npy/import.log", "a") as f:
-                    f.write("%s\n" % file)
+            np.save(local_data_path + "pe_data_%s.npy" % file,
+                    np.array(pe_data_list, dtype=np.int32))
+
+            block_err_data_list.clear()
+            page_err_data_list.clear()
+            pe_data_list.clear()
+
+            with open(data_root_path + "import.log", "a") as f:
+                f.write("%s\n" % file)
 
 
 def run():
-    # connect = pymysql.connect(host='127.0.0.1', port=3306,
-    #                           user='root', passwd='1998msm322', db='nandflash_gan', charset='utf8mb4')
+    connect = pymysql.connect(host='127.0.0.1', port=3306,
+                              user='root', passwd='1998msm322', db='nandflash_gan', charset='utf8mb4')
     testID = 1
-    import_data(None, testID, action=import_local, pe_interval=1000)
-    # connect.close()
+    import_data(connect, testID, action=import_local, pe_interval=1000)
+    # import_config(connect, testID)
+    connect.close()
 
 
 def test():
-    handle_file("e:/nandflash_data/2019_10_15/005.log", 5, None, 1, action=import_local, pe_interval=1000)
+    handle_file("e:/nandflash_data/log_file/2019_10_15/005.log", 5, None, 1, action=import_local, pe_interval=1000)
 
 
 if __name__ == "__main__":
-    test()
+    run()
