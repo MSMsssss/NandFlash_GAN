@@ -3,156 +3,106 @@ import pymysql
 import datetime
 import sys
 import os
+import numpy
 
 data_root_path = "e:/nandflash_data/"
+import_datebase = 0
+import_local = 1
+sql = "INSERT INTO tread(testID, pe, rt, rd, chip, ce, die, block, page, pagetype, tread, err, f0, f1, f2, " \
+      "f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, recordtime) VALUES (%s, %s, %s, %s, %s, %s, %s, " \
+      "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now()) "
+
+rt = 0
+rd = 0
+total_block = 0
 
 
-def read_file(file_path, chip, db, testID, start_lines, exit_lines):
-    i = 0
-    health = 0
-    modelID = 1
-    rt = 0
-    rd = 0
-    block_err = []
-    k = 5000
-    pe_number = 0
-    blockID_list = []
+# 对log文件中的一个page行进行处理，返回提取到的信息
+def handle_line(line):
+    temp = line[1:-2].split("][")
+    for i in range(len(temp)):
+        temp[i] = temp[i].split(" ")
+        for _ in range(temp[i].count("")):
+            temp[i].remove("")
 
+    rtn_dict = {
+        "pe": temp[0][1],
+        "ce": temp[0][2][1:],
+        "lun": temp[0][3][1:],
+        "block": temp[0][4][1:],
+        "page": temp[0][5][1:],
+        "page_type": temp[0][6],
+        "tread": temp[1][0],
+        "page_err": temp[2][0],
+        "f0-15": temp[3]
+    }
+    return rtn_dict
+
+
+# 根据handle_line提取到的多条信息组成的block，对一个block的信息进行处理，选择导入数据库或者保存到本地
+def handle_block(info_list, connect, action=import_datebase):
+    if action == import_datebase:
+        with connect.cursor() as cursor:
+            cursor.executemany(sql, info_list)
+        connect.commit()
+    else:
+        print("")
+
+
+# 对一个log文件进行处理
+def handle_file(file_path, chip, connect, testID, action=import_datebase):
     with open(file_path) as f:
-        line = f.readline()
-        read_recordID = 0
+        text_content = f.readlines()
+        print("%s log文件加载完毕" % file_path)
+        line_num = 0
+        while line_num < len(text_content):
+            if text_content[line_num] == "start\n" and len(text_content[line_num + 1]) == 170:
+                line_num += 2
 
-        while line:
-            # if i==exit_lines:
-            # sys.exit(0)
+                block_info_list = []
+                while text_content[line_num] != "end\n":
+                    info_dict = handle_line(text_content[line_num])
+                    block_info_list.append(
+                        (
+                            testID,
+                            info_dict["pe"],
+                            rt,
+                            rd,
+                            chip,
+                            info_dict["ce"],
+                            info_dict["lun"],
+                            info_dict["block"],
+                            info_dict["page"],
+                            info_dict["page_type"],
+                            info_dict["tread"],
+                            info_dict["page_err"],
+                            info_dict["f0-15"][0],
+                            info_dict["f0-15"][1],
+                            info_dict["f0-15"][2],
+                            info_dict["f0-15"][3],
+                            info_dict["f0-15"][4],
+                            info_dict["f0-15"][5],
+                            info_dict["f0-15"][6],
+                            info_dict["f0-15"][7],
+                            info_dict["f0-15"][8],
+                            info_dict["f0-15"][9],
+                            info_dict["f0-15"][10],
+                            info_dict["f0-15"][11],
+                            info_dict["f0-15"][12],
+                            info_dict["f0-15"][13],
+                            info_dict["f0-15"][14],
+                            info_dict["f0-15"][15]
+                        )
+                    )
 
-            if i >= start_lines:
-                health = 0
+                    line_num += 1
 
-                read_record = []
-
-                line = f.readline()
-                x = line[1:-2].split("][")
-                # print(x)
-                x1 = x[0].split(" ")
-                for j in range(x1.count('')):
-                    x1.remove('')
-
-                '''
-                向tread表中插入数据
-                从blockstatus数据表中提取pe和health值，health值判断block有没有坏，pe作为该block下read的pe次数，
-                并且计算blockbe表中block_err:取2304个16K页中err最高的前115个err的平均值
-                '''
-                if line == "[Group PEcnt CE LUN Block Page  Type  ][ tR ][page_err][F[0]   F[1]   F[2]   F[3]   F[4] " \
-                           " F[5]   F[6]   F[7]   F[8]   F[9]   F[a]   F[b]   F[c]   F[d]   F[e]   F[f]   ]\n":
-                    block_err = []
-                    k = 0
-
-                if len(x1) == 7 and x1[0] != "Group" and len(x) == 4:
-
-                    x2 = x[3].split(" ")
-                    for j in range(x2.count('')):
-                        x2.remove('')
-
-                    if "read" in x2:
-                        health = 3
-                        print(x2)
-
-                    for j in x1:
-                        j.strip()
-
-                    x[1].strip()
-                    x[2].strip()
-
-                    if health == 0:
-                        block_err.append(int(x[2]))
-
-                    k += 1
-
-                    read_record.append(read_recordID)  # recordID        read_record[0]
-                    read_record.append(testID)  # testID=1        read_record[1]
-                    read_record.append(int(x1[1]))  # pe              read_record[2]
-                    read_record.append(rt)  # rt              read_record[3]
-                    read_record.append(rd)  # rd              read_record[4]
-                    read_record.append(chip)  # chip            read_record[5]
-                    read_record.append(int(x1[2][1:]))  # ce              read_record[6]
-                    read_record.append(int(x1[3][1:]))  # die             read_record[7]
-                    read_record.append(int(x1[4][1:]))  # block           read_record[8]
-                    read_record.append(int(x1[5][1:]))  # page            read_record[9]
-                    read_record.append(x1[6])  # page_type       read_record[10]
-                    if health == 0:
-                        read_record.append(int(x[1]))  # tread           read_record[11]
-                    else:
-                        read_record.append(0)
-                    if health == 0:
-                        read_record.append(int(x[2]))  # err             read_record[12]
-                    else:
-                        read_record.append(0)  # err             read_record[12]
-                    read_record.append(int(x2[0]))  # f0              read_record[13]
-                    read_record.append(int(x2[1]))  # f1              read_record[14]
-                    read_record.append(int(x2[2]))  # f2              read_record[15]
-                    read_record.append(int(x2[3]))  # f3              read_record[16]
-                    read_record.append(int(x2[4]))  # f4              read_record[17]
-                    read_record.append(int(x2[5]))  # f5              read_record[18]
-                    read_record.append(int(x2[6]))  # f6              read_record[19]
-                    read_record.append(int(x2[7]))  # f7              read_record[20]
-                    read_record.append(int(x2[8]))  # f8              read_record[21]
-                    read_record.append(int(x2[9]))  # f9              read_record[22]
-                    read_record.append(int(x2[10]))  # f10             read_record[23]
-                    read_record.append(int(x2[11]))  # f11             read_record[24]
-                    read_record.append(int(x2[12]))  # f12             read_record[25]
-                    read_record.append(int(x2[13]))  # f13             read_record[26]
-                    read_record.append(int(x2[14]))  # f14             read_record[27]
-                    read_record.append(int(x2[15]))  # f15             read_record[28]
-                    recordtime = datetime.datetime.now()  # recordtime      read_record[29]
-                    read_record.append(recordtime)
-
-                    blockID = str(chip).zfill(3) + str(x1[2][1:].zfill(2)) + str(x1[3][1:].zfill(2)) + str(
-                        x1[4][1:].zfill(4))
-
-                    sql = "SELECT pe,health FROM blockstatus WHERE blockID = '%s'" % (blockID)
-                    cursor = db.cursor()
-                    try:
-                        pass
-                    except Exception as e:
-                        db.rollback()  # 发生错误时回滚
-                        print(e)
-                    cursor.close()
-
-                    if 1:
-                        '''
-                        print("tread:", read_record[0], read_record[1], read_record[2], read_record[3], read_record[4],
-                              read_record[5], read_record[6], read_record[7], read_record[8], read_record[9],
-                              read_record[10], read_record[11], read_record[12], read_record[13], read_record[14],
-                              read_record[15], read_record[16], read_record[17], read_record[18], read_record[19],
-                              read_record[20], read_record[21], read_record[22], read_record[23], read_record[24],
-                              read_record[25], read_record[26], read_record[27], read_record[28], read_record[29])
-                        '''
-                        sql = "INSERT INTO tread(testID,pe,rt,rd,chip,ce,die,block,page,pagetype,tread,err,f0,f1,f2," \
-                              "f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13,f14,f15,recordtime) VALUES (%s,%s,%s,%s,%s,%s,%s," \
-                              "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
-
-                        cursor = db.cursor()
-
-                        try:
-                            cursor.execute(sql, (
-                                read_record[1], read_record[2], read_record[3], read_record[4], read_record[5],
-                                read_record[6],
-                                read_record[7], read_record[8], read_record[9], read_record[10], read_record[11],
-                                read_record[12],
-                                read_record[13], read_record[14], read_record[15], read_record[16], read_record[17],
-                                read_record[18], read_record[19], read_record[20], read_record[21], read_record[22],
-                                read_record[23], read_record[24], read_record[25], read_record[26], read_record[27],
-                                read_record[28], read_record[29]))
-                            db.commit()  # 提交到数据库执行，一定要记提交哦
-                        except Exception as e:
-                            db.rollback()  # 发生错误时回滚
-                            print(e)
-
-                        cursor.close()
-                        read_recordID += 1
-
-            i += 1
+                handle_block(block_info_list, connect)
+                global total_block
+                total_block += 1
+                print("%s blocks are imported" % total_block)
+            else:
+                line_num += 1
 
 
 def import_config(connect, testID):
@@ -185,13 +135,8 @@ def import_config(connect, testID):
     print("config import done!")
 
 
-def import_data(connect, testID):
-    chips = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-
-    # start_line为下一次读取文件开始的行数，即该行还没有读取进数据库
-    start_lines = 0
-    # exit_line为下一次读取文件结束的行数（该行还没有读取进数据库）
-    exit_lines = 40000000
+def import_data(connect, testID, action=import_datebase):
+    chips = list(range(16))
 
     file_list = os.listdir(data_root_path)
     for file in file_list:
@@ -199,8 +144,8 @@ def import_data(connect, testID):
             cur_path = data_root_path + file + "/"
             for item in chips:
                 '''插入数据'''
-                file_path = str(item).zfill(3) + ".log"
-                read_file(cur_path + file_path, item, connect, testID, start_lines, exit_lines)
+                file_name = str(item).zfill(3) + ".log"
+                handle_file(cur_path + file_name, item, connect, testID)
                 print("date: %s, chip %s import success" % (file, item))
 
             print("date: %s log import success" % file)
@@ -210,7 +155,7 @@ def run():
     connect = pymysql.connect(host='127.0.0.1', port=3306,
                               user='root', passwd='1998msm322', db='nandflash_gan', charset='utf8mb4')
     testID = 1
-    import_data(connect, testID)
+    import_data(connect, testID, import_datebase)
     connect.close()
 
 
