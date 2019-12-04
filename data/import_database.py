@@ -27,6 +27,9 @@ pe_data_list = []  # 存储pe值
 
 # 对log文件中的一个page行进行处理，返回提取到的信息
 def handle_line(line):
+    if total_block == 305:
+        print("N")
+
     temp = line[1:-2].split("][")
     for i in range(len(temp)):
         temp[i] = temp[i].split(" ")
@@ -186,9 +189,9 @@ def import_data(connect, testID, action=import_datebase, pe_interval=1000):
                 '''插入数据'''
                 file_name = str(chip).zfill(3) + ".log"
                 handle_file(data_cur_path + file_name, chip, connect, testID, action, pe_interval)
-                with open("./import.out", "a") as f:
-                    f.write("date: %s, chip: %s import success\n" % (file, chip))
-                    f.write("%s blocks have been imported now\n" % total_block)
+                with open(data_root_path + "import.out", "a") as f:
+                    f.write("date: %s, chip: %s import success, %s blocks have been imported now\n" %
+                            (file, chip, total_block))
 
             with open(data_root_path + "import.out", "a") as f:
                 f.write("date: %s all chips import success\n" % file)
@@ -209,12 +212,16 @@ def import_data(connect, testID, action=import_datebase, pe_interval=1000):
 
 
 def run():
-    connect = pymysql.connect(host='127.0.0.1', port=3306,
-                              user='root', passwd='1998msm322', db='nandflash_gan', charset='utf8mb4')
+    # connect = pymysql.connect(host='127.0.0.1', port=3306,
+    #                           user='root', passwd='1998msm322', db='nandflash_gan', charset='utf8mb4')
     testID = 1
-    import_data(connect, testID, action=import_local, pe_interval=100)
-    connect.close()
+    import_data(None, testID, action=import_local, pe_interval=1000)
+    # connect.close()
+
+
+def test():
+    handle_file("e:/nandflash_data/2019_10_15/005.log", 5, None, 1, action=import_local, pe_interval=1000)
 
 
 if __name__ == "__main__":
-    run()
+    test()
