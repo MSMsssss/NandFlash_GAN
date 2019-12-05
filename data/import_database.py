@@ -9,6 +9,12 @@ sys.path.append(cur_path)
 import pymysql
 import numpy as np
 from utils.utils import mkdir
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--file_list", default="", help="指定要导入的文件包列表，用 & 隔开")
+parser.add_argument("--import_local", action="store_true", help="将文件保存至本地")
+opt = parser.parse_args()
 
 data_root_path = "e:/nandflash_data/"  # 数据文件根目录
 log_file_path = data_root_path + "log_file/"  # 原始log文件目录
@@ -174,25 +180,25 @@ def import_config(connect, testID):
 def import_data(connect, testID, action=import_datebase, pe_interval=1000, given_file_list=None):
     chip_list = list(range(16))
 
+    if not os.path.exists(data_root_path + "import.log"):
+        with open(data_root_path + "import.log", "w"):
+            print("create import.log")
+
+    with open(data_root_path + "import.log", "r") as f:
+        imported_list = set(f.read().split("\n"))
+        imported_list.remove("")
+
+    for file in imported_list:
+        print("%s has been imported" % file)
+
     if given_file_list is None:
         file_list = set(os.listdir(log_file_path))
-        if not os.path.exists(data_root_path + "import.log"):
-            with open(data_root_path + "import.log", "w"):
-                print("create import.log")
-
-        with open(data_root_path + "import.log", "r") as f:
-            imported_list = set(f.read().split("\n"))
-            imported_list.remove("")
-
-        for file in imported_list:
-            print("%s has been imported" % file)
-
         file_list = file_list - imported_list
-
-        if action == import_local:
-            mkdir(local_data_path)
     else:
-        file_list = given_file_list
+        file_list = set(given_file_list) - imported_list
+
+    if action == import_local:
+        mkdir(local_data_path)
 
     for file in file_list:
         data_cur_path = log_file_path + file + "/"
@@ -227,11 +233,18 @@ def import_data(connect, testID, action=import_datebase, pe_interval=1000, given
                 f.write("%s\n" % file)
 
 
-def run():
+def run(given_file_list):
     connect = pymysql.connect(host='127.0.0.1', port=3306,
                               user='root', passwd='1998msm322', db='nandflash_gan', charset='utf8mb4')
     testID = 1
-    import_data(connect, testID, action=import_local, pe_interval=1000)
+    if opt.import_local:
+        import_mode = import_local
+        print("正在保存到本地")
+    else:
+        import_mode = import_datebase
+        print("正在导入到数据库")
+
+    import_data(connect, testID, action=import_mode, pe_interval=1000, given_file_list=given_file_list)
     # import_config(connect, testID)
     connect.close()
 
@@ -241,4 +254,6 @@ def test():
 
 
 if __name__ == "__main__":
-    run()
+    file_list_str = opt.file_list
+    run(file_list_str.split("&") if len(file_list_str) != 0 else None)
+
