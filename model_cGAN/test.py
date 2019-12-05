@@ -18,7 +18,4 @@ from model_cGAN.dataset import TotalErrDataset, TestDataSet
 from data.connect_database import Connect, SqlConfig
 
 
-file_list = [1, 2, 3, 4, 5, 6]
 
-while True:
-    print(1)

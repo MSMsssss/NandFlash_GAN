@@ -6,8 +6,8 @@ command = "python ./model_cGAN/main.py --eval \
                            --g_load_model_path generator_epoch_%s.pth \
                            --d_load_model_path discriminator_epoch_%s.pth \
                            --gen_start_pe 0 \
-                           --gen_end_pe 17000 \
-                           --gen_interval_pe 500 \
+                           --gen_end_pe 18000 \
+                           --gen_interval_pe 1000 \
                            --generator_data_num 200"
 
 for epoch in range(20, 220, 20):

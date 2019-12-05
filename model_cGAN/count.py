@@ -12,13 +12,13 @@ import matplotlib.pyplot as plt
 import torch
 from data.connect_database import Connect, SqlConfig
 
-data_set = "real"
+data_set = "fake"
 if data_set == "real":
     err_data = np.load(cur_path + "/download_data/data_all.npy")
     pe_data = np.load(cur_path + "/download_data/condition_all.npy").squeeze(1)
 if data_set == "fake":
     z_dim = 20
-    epoch = 20
+    epoch = 100
     mode = "div_max"
     err_data = np.load(cur_path + "/gen_data/z_dim_%s/%s/gen_data_%s.npy" % (z_dim, mode, epoch))
     pe_data = np.load(cur_path + "/gen_data/z_dim_%s/%s/gen_condition_%s.npy" % (z_dim, mode, epoch)).squeeze(1)
@@ -140,14 +140,22 @@ def count_block_err_num_info():
     for pe in pe_set:
         left = 15000
         right = 320000
-        d = torch.histc(torch.from_numpy(total_err_data[pe]), min=left, max=right, bins=(right - left) // 5000)
-
+        d = torch.histc(torch.from_numpy(total_err_data[pe]), min=left, max=right, bins=(right - left) // 3000)
         x = [left + (i + 0.5) * (right - left) / d.shape[0] for i in range(d.shape[0])]
+
         plt.close()
         plt.title("pe:%s err_num distribute" % pe)
         plt.xlabel("err_num")
         plt.ylabel("num")
-        plt.plot(x, list(d))
+        plt.plot(x, list(d), color='green', label='real distribute')
+
+        n_num = total_err_data[pe].shape[0]
+        rand_n = np.random.randn(n_num) * 0.8 * total_err_data[pe].std() + total_err_data[pe].mean()
+        d_n = torch.histc(torch.from_numpy(rand_n), min=left, max=right, bins=(right - left) // 3000)
+        d_n = d_n / (n_num // total_err_data[pe].shape[0])
+
+        plt.plot(x, list(d_n), color='red', label='normal distribute')
+        plt.legend()
         plt.savefig(cur_path + "/count_img/real/real/err_num_distribute_%s" % pe)
 
 
@@ -172,5 +180,6 @@ def show_scatter():
 
 if __name__ == "__main__":
     # count_frequency()
-    count_block_err_num_info()
+    # count_block_err_num_info()
     # show_scatter()
+    count_gen_data()
