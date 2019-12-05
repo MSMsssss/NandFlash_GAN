@@ -115,7 +115,7 @@ def count_block_err_num_info():
         else:
             total_err_data[int(pe_data[i])].append(err_data[i].sum())
 
-    pe_set = [1] + list(range(500, 17000, 500))
+    pe_set = [1] + list(range(1000, 18000, 1000))
     std_set = []
     mean_set = []
     min_set = []
@@ -130,18 +130,18 @@ def count_block_err_num_info():
     plt.title("real data")
     plt.plot(pe_set, mean_set, color='green', label='mean')
     plt.plot(pe_set, min_set, color='red', label='min')
-    plt.plot(pe_set, max_set, color='blue', label='max')
+    # plt.plot(pe_set, max_set, color='blue', label='max')
     plt.plot(pe_set, std_set, color='skyblue', label='std')
     plt.legend()
     plt.xlabel('pe')
     plt.ylabel('err_num')
-    plt.show()
+    plt.savefig(cur_path + "/count_img/real/real/total_info")
 
     for pe in pe_set:
-        d = torch.histc(torch.from_numpy(total_err_data[pe]), bins=10)
+        d = torch.histc(torch.from_numpy(total_err_data[pe]), bins=50)
         left = total_err_data[pe].min()
         right = total_err_data[pe].max()
-        x = [left + i * (right - left) / d.shape[0] for i in range(d.shape[0])]
+        x = [left + (i + 0.5) * (right - left) / d.shape[0] for i in range(d.shape[0])]
         plt.close()
         plt.title("pe:%s err_num distribute" % pe)
         plt.xlabel("err_num")
@@ -157,6 +157,7 @@ def show_scatter():
     for i in range(err_data.shape[0]):
         x.append(pe_data[i])
         y.append(err_data[i].sum())
+    print(err_data.shape)
 
     plt.title("real data")
     plt.xlabel('pe')
@@ -211,4 +212,4 @@ if __name__ == "__main__":
     #     plt.ylabel('err_num')
     #     plt.scatter(x, y)
     #     plt.show()
-    show_scatter()
+    count_block_err_num_info()
