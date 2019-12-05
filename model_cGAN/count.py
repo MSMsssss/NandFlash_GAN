@@ -89,15 +89,15 @@ def count_frequency():
     total_dict = {}
     count_dict = {}
     for pe in pe_set:
-        total_dict[int(pe)] = np.zeros((2304,), dtype=np.int64)
+        total_dict[int(pe)] = np.zeros((2304,), dtype=np.float64)
         count_dict[int(pe)] = 0
 
     for i in range(err_data.shape[0]):
-        total_dict[int(pe_data[i])] += err_data[i].astype(dtype=np.int64)
+        total_dict[int(pe_data[i])] += err_data[i].astype(dtype=np.float64)
         count_dict[int(pe_data[i])] += 1
 
     for pe in total_dict.keys():
-        total_dict[pe] = total_dict[pe].astype(np.float64) / count_dict[pe]
+        total_dict[pe] = total_dict[pe] / count_dict[pe]
         total_dict[pe] = norm_range(total_dict[pe])
         total_dict[pe] = (255 - total_dict[pe] * 255).astype(np.uint8)
         img = np.zeros((2304, 16), dtype=np.uint8)
@@ -138,9 +138,10 @@ def count_block_err_num_info():
     plt.savefig(cur_path + "/count_img/real/real/total_info")
 
     for pe in pe_set:
-        d = torch.histc(torch.from_numpy(total_err_data[pe]), bins=50)
-        left = total_err_data[pe].min()
-        right = total_err_data[pe].max()
+        left = 15000
+        right = 320000
+        d = torch.histc(torch.from_numpy(total_err_data[pe]), min=left, max=right, bins=(right - left) // 5000)
+
         x = [left + (i + 0.5) * (right - left) / d.shape[0] for i in range(d.shape[0])]
         plt.close()
         plt.title("pe:%s err_num distribute" % pe)
@@ -154,10 +155,13 @@ def count_block_err_num_info():
 def show_scatter():
     x = []
     y = []
+    num = 0
     for i in range(err_data.shape[0]):
         x.append(pe_data[i])
         y.append(err_data[i].sum())
+
     print(err_data.shape)
+    print(min(y))
 
     plt.title("real data")
     plt.xlabel('pe')
@@ -167,49 +171,6 @@ def show_scatter():
 
 
 if __name__ == "__main__":
-    # for epoch in range(50, 400, 50):
-    #     total_err = np.load(cur_path + "/gen_data/totalerr_gen_data_%s.npy" % epoch)
-    #     pe_data = np.load(cur_path + "/gen_data/totalerr_gen_condition_%s.npy" % epoch).squeeze()
-    #     print(total_err.shape, pe_data.shape)
-    #
-    #     total_err = (total_err - total_err.min()) / (total_err.max() - total_err.min()) * 320000
-    #     # total_err = (total_err / 2 + 0.5) * 320000
-    #     err_dict = {}
-    #     pe_set = list(range(0, 17000, 500))
-    #     print(total_err)
-    #
-    #     for i in range(total_err.shape[0]):
-    #         if int(pe_data[i]) not in err_dict:
-    #             err_dict[int(pe_data[i])] = []
-    #         else:
-    #             err_dict[int(pe_data[i])].append(total_err[i])
-    #
-    #     std_set = []
-    #     mean_set = []
-    #     min_set = []
-    #     max_set = []
-    #     for pe in pe_set:
-    #         err_dict[pe] = np.array(err_dict[pe])
-    #         mean_set.append(err_dict[pe].mean())
-    #         min_set.append(err_dict[pe].min())
-    #         max_set.append(err_dict[pe].max())
-    #         std_set.append(err_dict[pe].std())
-    #
-    #     plt.title("real data")
-    #     plt.plot(pe_set, mean_set, color='green', label='mean')
-    #     plt.plot(pe_set, min_set, color='red', label='min')
-    #     plt.plot(pe_set, max_set, color='blue', label='max')
-    #     plt.plot(pe_set, std_set, color='skyblue', label='std')
-    #     plt.legend()
-    #     plt.xlabel('pe')
-    #     plt.ylabel('err_num')
-    #     plt.show()
-    #
-    #     x = list(pe_data)
-    #     y = list(total_err)
-    #     plt.title("real data")
-    #     plt.xlabel('pe')
-    #     plt.ylabel('err_num')
-    #     plt.scatter(x, y)
-    #     plt.show()
+    # count_frequency()
     count_block_err_num_info()
+    # show_scatter()

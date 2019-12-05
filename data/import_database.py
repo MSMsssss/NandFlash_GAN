@@ -93,7 +93,7 @@ def handle_file(file_path, chip, connect, testID, action, pe_interval):
                 pe = int(temp_dict["pe"])
                 page_err = temp_dict["page_err"]
 
-                if len(page_err) != 0 and (pe % pe_interval == 0 or pe == 1):
+                if len(page_err) != 0 and pe < 18000 and (pe % pe_interval == 0 or pe == 1):
                     block_info_list = []
 
                     while text_content[line_num] != "end\n":

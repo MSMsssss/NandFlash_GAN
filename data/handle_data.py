@@ -10,23 +10,29 @@ import numpy as np
 import torch
 import argparse
 
-file_prefix = "pe_data"
-data_root_path = cur_path + "/all_data/"
 
-with open(data_root_path + "import.log") as f:
-    file_list = f.read().split("\n")
-    file_list.remove("")
+# 合并所有数据
+def merge_data():
+    file_prefix = "pe_data"
+    data_root_path = cur_path + "/all_data/"
 
+    with open(data_root_path + "import.log") as f:
+        file_list = f.read().split("\n")
+        file_list.remove("")
 
-def run():
-    array_list = []
+    result = np.load(data_root_path + file_prefix + "_" + file_list[0] + ".npy").astype(np.float32)
+    print("%s load success" % file_list[0])
+    file_list.remove(file_list[0])
+
     for file in file_list:
-        array_list.append(np.load(data_root_path + file_prefix + "_" + file + ".npy"))
+        result = np.concatenate((result,
+                                 np.load(data_root_path + file_prefix + "_" + file + ".npy").astype(np.float32)),
+                                axis=0)
         print("%s load success" % file)
-    rtn = np.concatenate(array_list, axis=0)
-    np.save(data_root_path + "cat_data/all_%s.npy" % file_prefix, rtn.astype(np.float32))
-    print(rtn.shape)
+
+    np.save(data_root_path + "cat_data/all_%s.npy" % file_prefix, result)
+    print(result.shape)
 
 
 if __name__ == '__main__':
-    run()
+    merge_data()

@@ -34,7 +34,7 @@ class Dataset(torch.utils.data.Dataset):
             self.range = (0, len(self.config))
             # self.range = (0, 1)
             # 读取的pe集合
-            self.pe_set = [1] + list(range(500, 17000, 500))
+            self.pe_set = config.pe_set
 
             print("全部数据集信息：")
             for x in self.config[self.range[0]:self.range[1]]:
@@ -73,7 +73,7 @@ class Dataset(torch.utils.data.Dataset):
 class TotalErrDataset(torch.utils.data.Dataset):
     def __init__(self, err_data_path="", condition_data_path="", normalize=False):
         # 读取的pe集合
-        self.pe_set = [1] + list(range(500, 17000, 500))
+        self.pe_set = config.pe_set
         if err_data_path == "":
             # 建立数据库连接
             self.connect = Connect(SqlConfig.train_set_database)
