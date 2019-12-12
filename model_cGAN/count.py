@@ -5,7 +5,7 @@ root_path = os.path.dirname(cur_path)
 sys.path.append(cur_path)
 sys.path.append(root_path)
 
-from utils.utils import mkdir
+from utils.utils import mkdir, norm_range
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -22,19 +22,6 @@ if data_set == "fake":
     mode = "div_max"
     err_data = np.load(cur_path + "/gen_data/z_dim_%s/%s/gen_data_%s.npy" % (z_dim, mode, epoch))
     pe_data = np.load(cur_path + "/gen_data/z_dim_%s/%s/gen_condition_%s.npy" % (z_dim, mode, epoch)).squeeze(1)
-
-
-def norm_ip(img, min, max):
-    img = img.clip(min, max)
-    img = (img - min) / (max - min + 1e-5)
-    return img
-
-
-def norm_range(t, range=None):
-    if range is not None:
-        return norm_ip(t, float(range[0]), float(range[1]))
-    else:
-        return norm_ip(t, float(t.min()), float(t.max()))
 
 
 # 显示单个block的错误分布，并转换为灰度图

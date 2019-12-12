@@ -87,7 +87,8 @@ def model_eval():
         std = sample_std[i] * 0.8
         num = opt.generator_data_num
 
-        sample_err_num = (np.random.randn(num) * std + mean).astype(dtype=np.int32)
+        sample_err_num = \
+            (np.random.randn(num) * std + mean).astype(dtype=np.int32).clip(min=opt.min_err_num, max=opt.max_err_num)
         np.save(gen_data_path + "/total_err_num_%s" % pe, sample_err_num)
 
 
