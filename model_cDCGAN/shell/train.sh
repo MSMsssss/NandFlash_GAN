@@ -1,4 +1,4 @@
-python ./model_cDCGAN/main.py --train \
+python ./model_cDCGAN/probability_distributions_gen.py --train \
                            --cuda \
                            --ngf 128 \
                            --ndf 32 \

@@ -1,4 +1,4 @@
-python ./model_cDCGAN2/main.py --eval \
+python ./model_cDCGAN2/probability_distributions_gen.py --eval \
                            --cuda \
                            --ngf 128 \
                            --ndf 32 \

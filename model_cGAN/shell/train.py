@@ -1,5 +1,5 @@
 import os
-command = "python ./model_cGAN/main.py --train \
+command = "python ./model_cGAN/probability_distributions_gen.py --train \
                            --cuda \
                            --latent_dim 20 \
                            --epochs 500 \

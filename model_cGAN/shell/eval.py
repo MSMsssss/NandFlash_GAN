@@ -1,6 +1,6 @@
 import os
 
-command = "python ./model_cGAN/main.py --eval \
+command = "python ./model_cGAN/probability_distributions_gen.py --eval \
                            --cuda \
                            --latent_dim 20 \
                            --g_load_model_path generator_epoch_%s.pth \
