@@ -3,8 +3,5 @@
 .idea
 *.out
 *.npy
-*.jpg
-*.png
-*.bmp
 *.xlsx
 *.log
