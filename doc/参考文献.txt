@@ -1,0 +1,17 @@
+[1]	A dai., 2018. Shen Ru Qian Chu SSD. Beijing: Ji xie gong ye chu ban she.
+[2]	Arjovsky, M., Chintala, S. and Bottou, L., 2020. Wasserstein GAN. [online] arXiv.org.
+[3]	Chen yun., 2018. Shen Du Xue Xi Kuang Jia Pytorch. Beijing: Dian zi gong ye chu ban she.
+[4]	Docs.python.org. 2020. 3.8.2 Documentation.
+[5]	Forta, B., Liu, X. and Zhong, M., 2009. Mysql Bi Zhi Bi Hui. Beijing: Ren min you dian chu ban she.
+[6]	Goodfellow, I., Bengio, Y. and Courville, A., 2017. Shen Du Xue Xi. Bei jing shi: Ren min you dian chu ban she.
+[7]	Goodfellow, I., Pouget-Abadie, J., Mirza, M., Xu, B., Warde-Farley, D., Ozair, S., Courville, A. and Bengio, Y., 2020. Generative Adversarial Networks.
+[8]	Kim, B., Choi, J. and Min, S., 2020. Design Tradeoffs For SSD Reliability. [online] Usenix.org.
+[9]	Mirza, M. and Osindero, S., 2020. Conditional Generative Adversarial Nets. [online] arXiv.org.
+[10]	N. R. Mielke, R. E. Frickey, I. Kalastirsky, M. Quan, D. Ustinov and V. J. Vasudevan, "Reliability of Solid-State Drives Based on NAND Flash Memory," in Proceedings of the IEEE, vol. 105, no. 9, pp. 1725-1750, Sept. 2017.
+[11]	Pytorch.org. 2020. Pytorch Documentation — Pytorch Master Documentation. [online]
+[12]	Radford, A., Metz, L. and Chintala, S., 2020. Unsupervised Representation Learning With Deep Convolutional Generative Adversarial Networks. [online] arXiv.org.
+[13]	Zhu, J., Park, T., Isola, P. and Efros, A., 2020. Unpaired Image-To-Image Translation Using Cycle-Consistent Adversarial Networks. [online] arXiv.org.
+
+[1]	Goodfellow, I., Pouget-Abadie, J., Mirza, M., Xu, B., Warde-Farley, D., Ozair, S., Courville, A. and Bengio, Y., 2020. Generative Adversarial Networks.
+
+
